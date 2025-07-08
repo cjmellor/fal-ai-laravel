@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+use Rector\Config\RectorConfig;
+use RectorLaravel\Set\LaravelLevelSetList;
+use Rector\Php83\Rector\ClassMethod\AddOverrideAttributeToOverriddenMethodsRector;
+
+return RectorConfig::configure()
+    ->withPaths([
+        __DIR__ . '/config',
+        __DIR__ . '/database',
+        __DIR__ . '/resources',
+        __DIR__ . '/routes',
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
+    ])
+    ->withSkip([
+        __DIR__.'/bootstrap/cache',
+        AddOverrideAttributeToOverriddenMethodsRector::class,
+    ])
+    ->withPreparedSets(
+        deadCode: true,
+        codeQuality: true,
+        typeDeclarations: true,
+        privatization: true,
+        earlyReturn: true,
+        strictBooleans: true,
+    )
+    ->withSets([
+        LaravelLevelSetList::UP_TO_LARAVEL_:laravelVersion0,
+    ]);
+    // ->withPhpSets(php84: true)
+    ;
