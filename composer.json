@@ -1,8 +1,75 @@
 {
+  "name": "cjmellor/fal-ai-laravel",
+  "description": "A Laravel SDK for Fal.ai",
+  "keywords": [
+    "laravel",
+    "falai",
+    "php",
+    "sdk"
+  ],
+  "homepage": "https://github.com/cjmellor/fal-ai-laravel",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Chris Mellor",
+      "email": "cmellor@gmail.com"
+    }
+  ],
   "require": {
-    "laravel/prompts": "^0.1.6"
+    "php": "^8.4",
+    "illuminate/support": "^12.0",
+    "saloonphp/saloon": "^3.0"
   },
   "require-dev": {
-    "laravel/pint": "^1.22"
-  }
+    "nunomaduro/collision": "^8.0",
+    "orchestra/testbench": "^10.0",
+    "pestphp/pest": "^3.0",
+    "pestphp/pest-plugin-arch": "^3.0",
+    "pestphp/pest-plugin-laravel": "^3.0",
+    "driftingly/rector-laravel": "^2.0",
+    "rector/rector": "^2.0",
+    "laravel/pint": "^1.0",
+    "phpstan/phpstan": "^2.0",
+    "larastan/larastan": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Cjmellor\\FalAi\\": "src/",
+      "Cjmellor\\FalAi\\Database\\Factories\\": "database/factories/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Cjmellor\\FalAi\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "post-autoload-dump": [
+      "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump"
+    ],
+    "post-update-cmd": [],
+    "test": "vendor/bin/pest",
+    "refactor": "rector",
+    "refactor:dry": "rector --dry-run",
+    "lint": "./vendor/bin/pint",
+    "lint:test": "./vendor/bin/pint --test"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Cjmellor\\FalAi\\FalAiServiceProvider"
+      ],
+      "aliases": {
+        "FalAi": "Cjmellor\\FalAi\\Facades\\FalAi"
+      }
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
 }

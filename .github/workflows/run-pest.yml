@@ -1,4 +1,4 @@
-name: "Run Tests"
+name: "Run Pest"
 on: pull_request
 
 jobs:
@@ -7,8 +7,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        php: [ :phpVersion ]
-        laravel: [ :laravelVersion ]
+        php: [ 8.4 ]
+        laravel: [ 12 ]
         stability: [ prefer-lowest, prefer-stable ]
 
     name: "PHP: v${{ matrix.php }} [${{ matrix.stability }}]"
@@ -27,9 +27,8 @@ jobs:
       - name: Setup problem matchers
         run: |
           echo "::add-matcher::${{ runner.tool_cache }}/php.json"
-          echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
       - name: Install dependencies
         run: |
           composer update --${{ matrix.stability }} --prefer-dist --no-interaction
       - name: Execute tests
-        run: vendor/bin/phpunit
+        run: vendor/bin/pest

@@ -1,10 +1,10 @@
 <?php
 
-namespace :vendorName\:packageName\Tests;
+namespace Cjmellor\FalAi\Tests;
 
+use Cjmellor\FalAi\FalAiServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use :vendorName\:packageName\:packageNameServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -13,18 +13,18 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => ':vendorName\\:packageName\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName): string => 'Cjmellor\\FalAi\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            :packageNameServiceProvider::class,
+            FalAiServiceProvider::class,
         ];
     }
 
-    public function getEnvironmentSetUp($app)
+    public function getEnvironmentSetUp($app): void
     {
         config()->set('database.default', 'testing');
 
