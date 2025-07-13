@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Cjmellor\FalAi;
 
 use Illuminate\Support\ServiceProvider;
@@ -12,6 +14,10 @@ class FalAiServiceProvider extends ServiceProvider
             __DIR__.'/../config/fal-ai.php',
             'fal-ai'
         );
+
+        $this->app->singleton('fal-ai', function (): \Cjmellor\FalAi\FalAi {
+            return new FalAi;
+        });
     }
 
     public function boot(): void

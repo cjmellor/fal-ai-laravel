@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Helper functions for the build.php script.
  */
@@ -9,7 +11,7 @@
  */
 function run(string $command): string
 {
-    return trim((string) shell_exec($command));
+    return mb_trim((string) shell_exec($command));
 }
 
 /**
@@ -20,9 +22,9 @@ function slugify(string $text): string
     $text = str_replace(' ', '-', $text);
     $text = preg_replace('/[^A-Za-z0-9\-]/', '', $text);
     $text = preg_replace('/-+/', '-', $text);
-    $text = trim($text, '-');
+    $text = mb_trim($text, '-');
 
-    return strtolower($text);
+    return mb_strtolower($text);
 }
 
 /**
@@ -31,7 +33,7 @@ function slugify(string $text): string
 function camelCase(string $string, bool $ucfirst = false): string
 {
     $result = preg_replace_callback('/[-_](.)/', function ($matches) {
-        return strtoupper($matches[1]);
+        return mb_strtoupper($matches[1]);
     }, $string);
 
     return $ucfirst ? ucfirst($result) : $result;
@@ -42,7 +44,7 @@ function camelCase(string $string, bool $ucfirst = false): string
  */
 function kebabCase(string $string): string
 {
-    return strtolower(preg_replace('/([a-zA-Z])(?=[A-Z])/', '$1-', $string));
+    return mb_strtolower(preg_replace('/([a-zA-Z])(?=[A-Z])/', '$1-', $string));
 }
 
 /**
