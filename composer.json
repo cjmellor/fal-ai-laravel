@@ -40,11 +40,16 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Cjmellor\\FalAi\\Tests\\": "tests/"
+            "Cjmellor\\FalAi\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "scripts": {
         "post-autoload-dump": [
+            "@clear",
+            "@prepare",
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump"
         ],
         "post-update-cmd": [],
@@ -52,7 +57,15 @@
         "refactor": "rector",
         "refactor:dry": "rector --dry-run",
         "lint": "./vendor/bin/pint",
-        "lint:test": "./vendor/bin/pint --test"
+        "lint:test": "./vendor/bin/pint --test",
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ]
     },
     "config": {
         "sort-packages": true,
