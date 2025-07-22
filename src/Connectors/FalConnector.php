@@ -16,7 +16,10 @@ class FalConnector extends Connector
 
     protected function defaultAuth(): TokenAuthenticator
     {
-        return new TokenAuthenticator(token: config()->string(key: 'fal-ai.api_key'));
+        return new TokenAuthenticator(
+            token: config()->string(key: 'fal-ai.api_key'),
+            prefix: 'Key',
+        );
     }
 
     /**
