@@ -15,7 +15,7 @@ workbench:
   health: false
   discovers:
     web: true
-    api: false
+    api: true
     config: true
     commands: false
     components: false

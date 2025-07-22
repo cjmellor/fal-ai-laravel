@@ -4,4 +4,4 @@ vendor
 /workbench/*
 !/workbench/routes
 /workbench/routes/*
-!/workbench/routes/web.php
+!/workbench/routes/api.php
