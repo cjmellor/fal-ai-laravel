@@ -15,7 +15,7 @@ class FalAiServiceProvider extends ServiceProvider
             'fal-ai'
         );
 
-        $this->app->singleton('fal-ai', function (): \Cjmellor\FalAi\FalAi {
+        $this->app->singleton('fal-ai', function (): FalAi {
             return new FalAi;
         });
     }
