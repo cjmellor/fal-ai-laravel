@@ -9,6 +9,9 @@ use Cjmellor\FalAi\Requests\CancelRequest;
 use Cjmellor\FalAi\Requests\FetchRequestStatusRequest;
 use Cjmellor\FalAi\Requests\GetResultRequest;
 use Cjmellor\FalAi\Requests\SubmitRequest;
+use Cjmellor\FalAi\Responses\ResultResponse;
+use Cjmellor\FalAi\Responses\StatusResponse;
+use Cjmellor\FalAi\Responses\SubmitResponse;
 use Cjmellor\FalAi\Support\FluentRequest;
 use Saloon\Exceptions\Request\FatalRequestException;
 use Saloon\Exceptions\Request\RequestException;
@@ -43,9 +46,29 @@ class FalAi
      * @throws FatalRequestException
      * @throws RequestException
      */
-    public function run(array $data, ?string $modelId = null): Response
+    public function run(array $data, ?string $modelId = null): SubmitResponse
     {
-        return $this->sendRequest(new SubmitRequest($this->resolveModelId($modelId), $data));
+        $response = $this->sendRequest(new SubmitRequest($this->resolveModelId($modelId), $data));
+
+        return new SubmitResponse($response, $response->json());
+    }
+
+    /**
+     * Run a request to the Fal.ai API with a custom base URL
+     *
+     * @param  array  $data  The data to submit to the model
+     * @param  string|null  $modelId  The model ID to use (optional, uses default_model from config if null)
+     * @param  string|null  $baseUrlOverride  The base URL to use for this request
+     *
+     * @throws FatalRequestException
+     * @throws RequestException
+     */
+    public function runWithBaseUrl(array $data, ?string $modelId = null, ?string $baseUrlOverride = null): SubmitResponse
+    {
+        $connector = $baseUrlOverride ? $this->createConnectorWithBaseUrl($baseUrlOverride) : $this->connector;
+        $response = $connector->send(new SubmitRequest($this->resolveModelId($modelId), $data));
+
+        return new SubmitResponse($response, $response->json());
     }
 
     /**
@@ -58,9 +81,11 @@ class FalAi
      * @throws FatalRequestException
      * @throws RequestException
      */
-    public function status(string $requestId, bool $includeLogs = false, ?string $modelId = null): Response
+    public function status(string $requestId, bool $includeLogs = false, ?string $modelId = null): StatusResponse
     {
-        return $this->sendRequest(new FetchRequestStatusRequest($requestId, $this->resolveModelId($modelId), $includeLogs));
+        $response = $this->sendRequest(new FetchRequestStatusRequest($requestId, $this->resolveModelId($modelId), $includeLogs));
+
+        return new StatusResponse($response, $response->json());
     }
 
     /**
@@ -72,9 +97,11 @@ class FalAi
      * @throws FatalRequestException
      * @throws RequestException
      */
-    public function result(string $requestId, ?string $modelId = null): Response
+    public function result(string $requestId, ?string $modelId = null): ResultResponse
     {
-        return $this->sendRequest(new GetResultRequest($requestId, $this->resolveModelId($modelId)));
+        $response = $this->sendRequest(new GetResultRequest($requestId, $this->resolveModelId($modelId)));
+
+        return new ResultResponse($response, $response->json());
     }
 
     /**
@@ -100,6 +127,14 @@ class FalAi
     private function sendRequest(Request $request): Response
     {
         return $this->connector->send($request);
+    }
+
+    /**
+     * Create a connector with a custom base URL
+     */
+    private function createConnectorWithBaseUrl(string $baseUrl): FalConnector
+    {
+        return new FalConnector($baseUrl);
     }
 
     /**

@@ -9,9 +9,16 @@ use Saloon\Http\Connector;
 
 class FalConnector extends Connector
 {
+    private ?string $baseUrlOverride = null;
+
+    public function __construct(?string $baseUrlOverride = null)
+    {
+        $this->baseUrlOverride = $baseUrlOverride;
+    }
+
     public function resolveBaseUrl(): string
     {
-        return config()->string(key: 'fal-ai.base_url');
+        return $this->baseUrlOverride ?? config()->string(key: 'fal-ai.base_url');
     }
 
     protected function defaultAuth(): TokenAuthenticator
