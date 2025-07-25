@@ -8,7 +8,9 @@ use Cjmellor\FalAi\Requests\CancelRequest;
 use Cjmellor\FalAi\Requests\FetchRequestStatusRequest;
 use Cjmellor\FalAi\Requests\GetResultRequest;
 use Cjmellor\FalAi\Requests\SubmitRequest;
+use Cjmellor\FalAi\Responses\SubmitResponse;
 use Cjmellor\FalAi\Support\FluentRequest;
+use Mockery;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
@@ -160,7 +162,7 @@ describe('FalAi Core Class', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Saloon\Http\Response => $falAi->run(['prompt' => 'test']))
+        expect(fn (): Saloon\Http\Response => $falAi->run(['prompt' => 'test']))
             ->toThrow(InvalidModelException::class, 'Model ID cannot be empty');
     });
 
@@ -194,6 +196,28 @@ describe('FalAi Core Class', function (): void {
         // Verify config default was used by checking the request was made
         expect($response->status())->toBe(200)
             ->and($response->json()['request_id'])->toBe('test-request-default');
+    });
+
+    it('queue method uses queue URL', function (): void {
+        $falAi = Mockery::mock(FalAi::class);
+        $falAi->shouldReceive('runWithBaseUrl')
+            ->once()
+            ->with(['prompt' => 'test'], 'test-model', 'https://queue.fal.run')
+            ->andReturn(Mockery::mock(SubmitResponse::class));
+
+        $request = new FluentRequest($falAi, 'test-model');
+        $request->prompt('test')->queue()->run();
+    });
+
+    it('sync method uses sync URL', function (): void {
+        $falAi = Mockery::mock(FalAi::class);
+        $falAi->shouldReceive('runWithBaseUrl')
+            ->once()
+            ->with(['prompt' => 'test'], 'test-model', 'https://fal.run')
+            ->andReturn(Mockery::mock(SubmitResponse::class));
+
+        $request = new FluentRequest($falAi, 'test-model');
+        $request->prompt('test')->sync()->run();
     });
 
 });

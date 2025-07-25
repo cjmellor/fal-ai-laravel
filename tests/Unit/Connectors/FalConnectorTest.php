@@ -20,4 +20,32 @@ describe('FalConnector', function (): void {
         expect($connector->resolveBaseUrl())->toBe('https://test.fal.run');
     });
 
+    it('uses default queue URL when no override is provided', function (): void {
+        config(['fal-ai.base_url' => 'https://queue.fal.run']);
+
+        $connector = new FalConnector();
+
+        expect($connector->resolveBaseUrl())->toBe('https://queue.fal.run');
+    });
+
+    it('can override base URL with queue URL explicitly', function (): void {
+        $connector = new FalConnector('https://queue.fal.run');
+
+        expect($connector->resolveBaseUrl())->toBe('https://queue.fal.run');
+    });
+
+    it('can override base URL with sync URL', function (): void {
+        $connector = new FalConnector('https://fal.run');
+
+        expect($connector->resolveBaseUrl())->toBe('https://fal.run');
+    });
+
+    it('falls back to config when no override is provided', function (): void {
+        config(['fal-ai.base_url' => 'https://custom.fal.run']);
+
+        $connector = new FalConnector();
+
+        expect($connector->resolveBaseUrl())->toBe('https://custom.fal.run');
+    });
+
 });

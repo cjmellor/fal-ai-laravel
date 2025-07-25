@@ -33,6 +33,57 @@ describe('FluentRequest Dynamic Methods', function (): void {
         ]);
     });
 
+    it('can use queue method in fluent chain', function (): void {
+        $request = createFluentRequest()
+            ->prompt('Test queue request')
+            ->queue()
+            ->imageSize('512x512');
+
+        expect($request->toArray())->toBe([
+            'prompt' => 'Test queue request',
+            'image_size' => '512x512',
+        ]);
+    });
+
+    it('can use sync method in fluent chain', function (): void {
+        $request = createFluentRequest()
+            ->prompt('Test sync request')
+            ->sync()
+            ->numImages(2);
+
+        expect($request->toArray())->toBe([
+            'prompt' => 'Test sync request',
+            'num_images' => 2,
+        ]);
+    });
+
+    it('can switch from queue to sync in the same request chain', function (): void {
+        $request = createFluentRequest()
+            ->prompt('Test switching')
+            ->queue()
+            ->imageSize('512x512')
+            ->sync()
+            ->numImages(2);
+
+        expect($request->toArray())->toBe([
+            'prompt' => 'Test switching',
+            'image_size' => '512x512',
+            'num_images' => 2,
+        ]);
+    });
+
+    it('queue method sets correct queue URL', function (): void {
+        $request = createFluentRequest()->queue();
+
+        expect($request->getBaseUrlOverride())->toBe('https://queue.fal.run');
+    });
+
+    it('sync method sets correct sync URL', function (): void {
+        $request = createFluentRequest()->sync();
+
+        expect($request->getBaseUrlOverride())->toBe('https://fal.run');
+    });
+
     it('converts camelCase methods to snake_case keys', function (): void {
         $request = createFluentRequest()
             ->imageSize('1024x1024')

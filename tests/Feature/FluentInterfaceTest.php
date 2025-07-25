@@ -182,7 +182,107 @@ describe('Fluent Interface Feature Tests', function (): void {
         expect($request->prompt('Test'))->toBeInstanceOf(FluentRequest::class)
             ->and($request->imageSize('512x512'))->toBeInstanceOf(FluentRequest::class)
             ->and($request->with(['key' => 'value']))->toBeInstanceOf(FluentRequest::class)
-            ->and($request->when(true, fn ($r): \Cjmellor\FalAi\Support\FluentRequest => $r))->toBeInstanceOf(FluentRequest::class);
+            ->and($request->when(true, fn ($r): FluentRequest => $r))->toBeInstanceOf(FluentRequest::class)
+            ->and($request->queue())->toBeInstanceOf(FluentRequest::class)
+            ->and($request->sync())->toBeInstanceOf(FluentRequest::class);
+    });
+
+    it('can use queue method to explicitly set queue endpoint', function (): void {
+        MockClient::global([
+            SubmitRequest::class => MockResponse::make([
+                'request_id' => 'queue-request-123',
+                'response_url' => 'https://queue.fal.run/test-model/requests/queue-request-123',
+            ], 200),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi
+            ->model('test-model')
+            ->queue()
+            ->prompt('A beautiful landscape')
+            ->run();
+
+        expect($response->status())->toBe(200)
+            ->and($response->json()['request_id'])->toBe('queue-request-123');
+    });
+
+    it('can use sync method to set sync endpoint', function (): void {
+        MockClient::global([
+            SubmitRequest::class => MockResponse::make([
+                'request_id' => 'sync-request-456',
+                'response_url' => 'https://fal.run/test-model/requests/sync-request-456',
+            ], 200),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi
+            ->model('test-model')
+            ->sync()
+            ->prompt('A quick generation')
+            ->run();
+
+        expect($response->status())->toBe(200)
+            ->and($response->json()['request_id'])->toBe('sync-request-456');
+    });
+
+    it('can chain queue and sync methods with other fluent methods', function (): void {
+        MockClient::global([
+            SubmitRequest::class => MockResponse::make([
+                'request_id' => 'chained-queue-789',
+                'response_url' => 'https://queue.fal.run/test-model/requests/chained-queue-789',
+            ], 200),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi
+            ->model('test-model')
+            ->prompt('Complex chained request')
+            ->imageSize('landscape_4_3')
+            ->queue()
+            ->numImages(2)
+            ->guidanceScale(7.5)
+            ->run();
+
+        expect($response->status())->toBe(200)
+            ->and($response->json()['request_id'])->toBe('chained-queue-789');
+    });
+
+    it('maintains backward compatibility when no queue/sync method is called', function (): void {
+        MockClient::global([
+            SubmitRequest::class => MockResponse::make([
+                'request_id' => 'default-request-000',
+                'response_url' => 'https://test.fal.run/test-model/requests/default-request-000',
+            ], 200),
+        ]);
+
+        $falAi = new FalAi();
+
+        // This should work exactly as before
+        $response = $falAi
+            ->model('test-model')
+            ->prompt('Default behavior test')
+            ->run();
+
+        expect($response->status())->toBe(200)
+            ->and($response->json()['request_id'])->toBe('default-request-000');
+    });
+
+    it('allows switching between queue and sync in the same chain', function (): void {
+        $falAi = new FalAi();
+
+        $request = $falAi
+            ->model('test-model')
+            ->prompt('Test prompt')
+            ->queue()
+            ->imageSize('512x512')
+            ->sync(); // This should override the queue setting
+
+        // We can't easily test the actual URL without mocking deeper,
+        // but we can verify the methods are chainable
+        expect($request)->toBeInstanceOf(FluentRequest::class);
     });
 
 })->group('feature', 'fluent-interface');
