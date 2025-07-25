@@ -6,9 +6,9 @@ namespace Cjmellor\FalAi\Support;
 
 use Cjmellor\FalAi\Contracts\FluentRequestInterface;
 use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Responses\SubmitResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
-use Saloon\Http\Response;
 
 class FluentRequest implements FluentRequestInterface
 {
@@ -19,6 +19,8 @@ class FluentRequest implements FluentRequestInterface
     private ?string $modelId;
 
     private FalAi $falAi;
+
+    private ?string $baseUrlOverride = null;
 
     public function __construct(FalAi $falAi, ?string $modelId)
     {
@@ -67,11 +69,31 @@ class FluentRequest implements FluentRequestInterface
     }
 
     /**
+     * Set the request to use the queue endpoint explicitly
+     */
+    public function queue(): self
+    {
+        $this->baseUrlOverride = 'https://queue.fal.run';
+
+        return $this;
+    }
+
+    /**
+     * Set the request to use the sync endpoint
+     */
+    public function sync(): self
+    {
+        $this->baseUrlOverride = 'https://fal.run';
+
+        return $this;
+    }
+
+    /**
      * Execute the request
      */
-    public function run(): Response
+    public function run(): SubmitResponse
     {
-        return $this->falAi->run($this->data, $this->modelId);
+        return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride);
     }
 
     /**
@@ -117,5 +139,13 @@ class FluentRequest implements FluentRequestInterface
         $clone->data = array_merge($this->data, $data);
 
         return $clone;
+    }
+
+    /**
+     * Get the current base URL override
+     */
+    public function getBaseUrlOverride(): ?string
+    {
+        return $this->baseUrlOverride;
     }
 }

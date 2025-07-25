@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Contracts;
 
+use Cjmellor\FalAi\Responses\SubmitResponse;
+
 interface FluentRequestInterface
 {
     /**
@@ -39,5 +41,5 @@ interface FluentRequestInterface
     /**
      * Execute the request
      */
-    public function run(): \Saloon\Http\Response;
+    public function run(): SubmitResponse;
 }
