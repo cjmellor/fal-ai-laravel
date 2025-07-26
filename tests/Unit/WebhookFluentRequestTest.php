@@ -19,14 +19,14 @@ it('sets webhook url with withWebhook', function (): void {
 it('validates webhook url', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
 
-    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $request->withWebhook('not-a-valid-url'))
+    expect(fn (): FluentRequest => $request->withWebhook('not-a-valid-url'))
         ->toThrow(InvalidArgumentException::class, 'Invalid webhook URL provided');
 });
 
 it('requires https for webhook url', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
 
-    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $request->withWebhook('http://example.com/webhook'))
+    expect(fn (): FluentRequest => $request->withWebhook('http://example.com/webhook'))
         ->toThrow(InvalidArgumentException::class, 'Webhook URL must use HTTPS');
 });
 

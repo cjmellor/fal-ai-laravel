@@ -49,7 +49,7 @@ it('validates webhook url in integration', function (): void {
     $falAi = new FalAi('test-api-key');
 
     // Test invalid URL
-    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $falAi->model('fal-ai/flux/schnell')
+    expect(fn (): Cjmellor\FalAi\Support\FluentRequest => $falAi->model('fal-ai/flux/schnell')
         ->withWebhook('not-a-valid-url'))
         ->toThrow(InvalidArgumentException::class, 'Invalid webhook URL provided');
 });
@@ -58,7 +58,7 @@ it('requires https in integration', function (): void {
     $falAi = new FalAi('test-api-key');
 
     // Test HTTP URL (should fail)
-    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $falAi->model('fal-ai/flux/schnell')
+    expect(fn (): Cjmellor\FalAi\Support\FluentRequest => $falAi->model('fal-ai/flux/schnell')
         ->withWebhook('http://myapp.com/webhook'))
         ->toThrow(InvalidArgumentException::class, 'Webhook URL must use HTTPS');
 });
