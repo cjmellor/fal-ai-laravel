@@ -59,14 +59,15 @@ class FalAi
      * @param  array  $data  The data to submit to the model
      * @param  string|null  $modelId  The model ID to use (optional, uses default_model from config if null)
      * @param  string|null  $baseUrlOverride  The base URL to use for this request
+     * @param  string|null  $webhookUrl  The webhook URL for asynchronous notifications
      *
      * @throws FatalRequestException
      * @throws RequestException
      */
-    public function runWithBaseUrl(array $data, ?string $modelId = null, ?string $baseUrlOverride = null): SubmitResponse
+    public function runWithBaseUrl(array $data, ?string $modelId = null, ?string $baseUrlOverride = null, ?string $webhookUrl = null): SubmitResponse
     {
         $connector = $baseUrlOverride ? $this->createConnectorWithBaseUrl($baseUrlOverride) : $this->connector;
-        $response = $connector->send(new SubmitRequest($this->resolveModelId($modelId), $data));
+        $response = $connector->send(new SubmitRequest($this->resolveModelId($modelId), $data, $webhookUrl));
 
         return new SubmitResponse($response, $response->json());
     }

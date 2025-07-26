@@ -20,6 +20,7 @@ class SubmitRequest extends Request implements HasBody
     public function __construct(
         protected readonly ?string $modelId = null,
         protected readonly array $data = [],
+        protected readonly ?string $webhookUrl = null,
     ) {}
 
     /**
@@ -40,5 +41,16 @@ class SubmitRequest extends Request implements HasBody
     public function defaultBody(): array
     {
         return $this->data;
+    }
+
+    public function defaultQuery(): array
+    {
+        $query = [];
+
+        if ($this->webhookUrl) {
+            $query['fal_webhook'] = $this->webhookUrl;
+        }
+
+        return $query;
     }
 }

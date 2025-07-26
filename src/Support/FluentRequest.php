@@ -9,6 +9,7 @@ use Cjmellor\FalAi\FalAi;
 use Cjmellor\FalAi\Responses\SubmitResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
+use InvalidArgumentException;
 
 class FluentRequest implements FluentRequestInterface
 {
@@ -21,6 +22,8 @@ class FluentRequest implements FluentRequestInterface
     private FalAi $falAi;
 
     private ?string $baseUrlOverride = null;
+
+    private ?string $webhookUrl = null;
 
     public function __construct(FalAi $falAi, ?string $modelId)
     {
@@ -89,11 +92,37 @@ class FluentRequest implements FluentRequestInterface
     }
 
     /**
+     * Set the webhook URL for asynchronous notifications
+     * Automatically switches to queue endpoint when webhook is specified
+     */
+    public function withWebhook(string $url): self
+    {
+        throw_unless(
+            Str::isUrl($url),
+            InvalidArgumentException::class,
+            'Invalid webhook URL provided'
+        );
+
+        throw_unless(
+            Str::startsWith($url, 'https://'),
+            InvalidArgumentException::class,
+            'Webhook URL must use HTTPS'
+        );
+
+        $this->webhookUrl = $url;
+
+        // Automatically switch to queue endpoint when webhook is specified
+        $this->queue();
+
+        return $this;
+    }
+
+    /**
      * Execute the request
      */
     public function run(): SubmitResponse
     {
-        return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride);
+        return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride, $this->webhookUrl);
     }
 
     /**
@@ -147,5 +176,13 @@ class FluentRequest implements FluentRequestInterface
     public function getBaseUrlOverride(): ?string
     {
         return $this->baseUrlOverride;
+    }
+
+    /**
+     * Get the current webhook URL
+     */
+    public function getWebhookUrl(): ?string
+    {
+        return $this->webhookUrl;
     }
 }
