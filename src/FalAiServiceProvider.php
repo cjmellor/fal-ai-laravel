@@ -22,6 +22,8 @@ class FalAiServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        $this->loadRoutesFrom(__DIR__.'/../routes/webhooks.php');
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__.'/../config/fal-ai.php' => config_path('fal-ai.php'),
