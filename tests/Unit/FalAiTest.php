@@ -202,7 +202,7 @@ describe('FalAi Core Class', function (): void {
         $falAi = Mockery::mock(FalAi::class);
         $falAi->shouldReceive('runWithBaseUrl')
             ->once()
-            ->with(['prompt' => 'test'], 'test-model', 'https://queue.fal.run')
+            ->with(['prompt' => 'test'], 'test-model', 'https://queue.fal.run', null)
             ->andReturn(Mockery::mock(SubmitResponse::class));
 
         $request = new FluentRequest($falAi, 'test-model');
@@ -213,7 +213,7 @@ describe('FalAi Core Class', function (): void {
         $falAi = Mockery::mock(FalAi::class);
         $falAi->shouldReceive('runWithBaseUrl')
             ->once()
-            ->with(['prompt' => 'test'], 'test-model', 'https://fal.run')
+            ->with(['prompt' => 'test'], 'test-model', 'https://fal.run', null)
             ->andReturn(Mockery::mock(SubmitResponse::class));
 
         $request = new FluentRequest($falAi, 'test-model');
