@@ -66,7 +66,7 @@ class FalAi
      */
     public function runWithBaseUrl(array $data, ?string $modelId = null, ?string $baseUrlOverride = null, ?string $webhookUrl = null): SubmitResponse
     {
-        $connector = $baseUrlOverride ? $this->createConnectorWithBaseUrl($baseUrlOverride) : $this->connector;
+        $connector = $baseUrlOverride !== null && $baseUrlOverride !== '' && $baseUrlOverride !== '0' ? $this->createConnectorWithBaseUrl($baseUrlOverride) : $this->connector;
         $response = $connector->send(new SubmitRequest($this->resolveModelId($modelId), $data, $webhookUrl));
 
         return new SubmitResponse($response, $response->json());

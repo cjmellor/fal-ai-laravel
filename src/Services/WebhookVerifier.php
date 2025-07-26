@@ -9,7 +9,6 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use SodiumException;
 
 class WebhookVerifier
@@ -154,7 +153,7 @@ class WebhookVerifier
                 }
 
                 throw_if(
-                    condition: empty($publicKeys),
+                    condition: $publicKeys === [],
                     exception: new WebhookVerificationException('No valid public keys found in JWKS')
                 );
 
@@ -203,7 +202,7 @@ class WebhookVerifier
     private function base64UrlDecode(string $data): string
     {
         $remainder = mb_strlen($data) % 4;
-        if ($remainder) {
+        if ($remainder !== 0) {
             $data .= str_repeat('=', 4 - $remainder);
         }
 

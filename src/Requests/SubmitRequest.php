@@ -47,7 +47,7 @@ class SubmitRequest extends Request implements HasBody
     {
         $query = [];
 
-        if ($this->webhookUrl) {
+        if ($this->webhookUrl !== null && $this->webhookUrl !== '' && $this->webhookUrl !== '0') {
             $query['fal_webhook'] = $this->webhookUrl;
         }
 

@@ -9,7 +9,6 @@ use Cjmellor\FalAi\Services\WebhookVerifier;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class VerifyFalWebhook
