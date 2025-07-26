@@ -54,4 +54,47 @@ return [
 
     'default_model' => '',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Webhook Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configuration options for webhook verification and handling.
+    |
+    */
+
+    'webhook' => [
+        /*
+        |--------------------------------------------------------------------------
+        | JWKS Cache TTL
+        |--------------------------------------------------------------------------
+        |
+        | How long to cache the JSON Web Key Set (JWKS) from fal.ai in seconds.
+        | Default is 24 hours (86400 seconds). Do not set higher than 24 hours.
+        |
+        */
+        'jwks_cache_ttl' => env('FAL_WEBHOOK_JWKS_CACHE_TTL', 86400),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Timestamp Tolerance
+        |--------------------------------------------------------------------------
+        |
+        | Maximum allowed time difference in seconds between the webhook timestamp
+        | and current time. This prevents replay attacks. Default is 5 minutes (300 seconds).
+        |
+        */
+        'timestamp_tolerance' => env('FAL_WEBHOOK_TIMESTAMP_TOLERANCE', 300),
+
+        /*
+        |--------------------------------------------------------------------------
+        | Verification Timeout
+        |--------------------------------------------------------------------------
+        |
+        | Timeout in seconds for fetching JWKS from fal.ai. Default is 10 seconds.
+        |
+        */
+        'verification_timeout' => env('FAL_WEBHOOK_VERIFICATION_TIMEOUT', 10),
+    ],
+
 ];
