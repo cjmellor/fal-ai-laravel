@@ -8,29 +8,6 @@ use Saloon\Http\Response;
 
 class ResultResponse
 {
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
-    }
-
-
-
-    /**
-     * Get all images from the response
-     */
-    // public function getImages(): array
-    // {
-    //     return $this->images ?? [];
-    // }
-    private function images(): array
-    {
-        return $this->data['images'] ?? [];
-    }
-
     public array $images {
         get => $this->images();
     }
@@ -147,6 +124,15 @@ class ResultResponse
         get => $this->images()[0]['file_size'] ?? null;
     }
 
+    private array $data;
+
+    public function __construct(
+        private Response $response,
+        array $data
+    ) {
+        $this->data = $data;
+    }
+
     // Backward compatibility methods
     public function json(): array
     {
@@ -171,5 +157,17 @@ class ResultResponse
     public function getResponse(): Response
     {
         return $this->response;
+    }
+
+    /**
+     * Get all images from the response
+     */
+    // public function getImages(): array
+    // {
+    //     return $this->images ?? [];
+    // }
+    private function images(): array
+    {
+        return $this->data['images'] ?? [];
     }
 }
