@@ -32,7 +32,7 @@ it('passes request when verification succeeds', function (): void {
         ->andReturn(true);
 
     $nextCalled = false;
-    $next = function ($req) use (&$nextCalled): \Illuminate\Http\Response {
+    $next = function ($req) use (&$nextCalled): Response {
         $nextCalled = true;
 
         return new Response('Success');
@@ -61,7 +61,7 @@ it('returns unauthorized when verification fails', function (): void {
         ->andThrow(new WebhookVerificationException('Invalid signature'));
 
     $nextCalled = false;
-    $next = function ($req) use (&$nextCalled): \Illuminate\Http\Response {
+    $next = function ($req) use (&$nextCalled): Response {
         $nextCalled = true;
 
         return new Response('Success');
@@ -97,7 +97,7 @@ it('logs verification failure details', function (): void {
         ->with($request)
         ->andThrow(new WebhookVerificationException('Timestamp too old'));
 
-    $next = function ($req): \Illuminate\Http\Response {
+    $next = function ($req): Response {
         return new Response('Success');
     };
 
@@ -117,7 +117,7 @@ it('works with different verification errors', function (string $errorMessage, s
         ->with($request)
         ->andThrow(new WebhookVerificationException($errorMessage));
 
-    $next = function ($req): \Illuminate\Http\Response {
+    $next = function ($req): Response {
         return new Response('Success');
     };
 
@@ -148,7 +148,7 @@ it('shows actual error message in debug mode', function (): void {
         ->with($request)
         ->andThrow(new WebhookVerificationException($actualError));
 
-    $next = function ($req): \Illuminate\Http\Response {
+    $next = function ($req): Response {
         return new Response('Success');
     };
 
