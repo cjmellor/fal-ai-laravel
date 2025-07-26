@@ -1,3 +1,5 @@
+<img width="1664" height="384" alt="Fal AI Laravel SDK Banner" src="https://github.com/user-attachments/assets/17a91407-7135-4a21-b9ed-43529ce7fa77" />
+
 # Fal.ai Laravel Package
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/cjmellor/fal-ai-laravel?color=rgb%2856%20189%20248%29&label=release&style=for-the-badge)](https://packagist.org/packages/cjmellor/fal-ai-laravel)
