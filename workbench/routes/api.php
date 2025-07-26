@@ -129,7 +129,7 @@ Route::put('/fal/cancel/{requestId}', function (string $requestId) {
 // Webhook endpoint using middleware (Recommended)
 Route::post('/webhooks/fal', function (Request $request) {
     $payload = $request->json()->all();
-    
+
     // Log the full payload for debugging
     Log::info('Fal.ai webhook received', [
         'payload' => $payload,
@@ -140,7 +140,7 @@ Route::post('/webhooks/fal', function (Request $request) {
     if (isset($payload['status']) && $payload['status'] === 'OK') {
         $requestId = $payload['request_id'];
         $gatewayRequestId = $payload['gateway_request_id'] ?? $requestId;
-        
+
         // Check for payload errors
         if (isset($payload['payload_error'])) {
             Log::warning('Fal.ai payload error', [
@@ -148,9 +148,10 @@ Route::post('/webhooks/fal', function (Request $request) {
                 'gateway_request_id' => $gatewayRequestId,
                 'payload_error' => $payload['payload_error'],
             ]);
+
             return response()->json(['status' => 'payload_error']);
         }
-        
+
         $images = $payload['payload']['images'] ?? [];
         $seed = $payload['payload']['seed'] ?? null;
 

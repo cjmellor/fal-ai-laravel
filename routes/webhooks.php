@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 // Main webhook endpoint with verification middleware
 Route::post('/webhooks/fal', function (Request $request) {
     $payload = $request->json()->all();
-    
+
     // Handle successful completion (status: OK)
     if (isset($payload['status']) && $payload['status'] === 'OK') {
         return response()->json(['status' => 'processed']);
