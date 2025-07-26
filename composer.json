@@ -21,16 +21,17 @@
         "saloonphp/saloon": "^3.0"
     },
     "require-dev": {
+        "driftingly/rector-laravel": "^2.0",
+        "larastan/larastan": "^3.0",
+        "laravel/pail": "^1.2",
+        "laravel/pint": "^1.0",
         "nunomaduro/collision": "^8.0",
         "orchestra/testbench": "^10.0",
         "pestphp/pest": "^3.0",
         "pestphp/pest-plugin-arch": "^3.0",
         "pestphp/pest-plugin-laravel": "^3.0",
-        "driftingly/rector-laravel": "^2.0",
-        "rector/rector": "^2.0",
-        "laravel/pint": "^1.0",
         "phpstan/phpstan": "^2.0",
-        "larastan/larastan": "^3.0"
+        "rector/rector": "^2.0"
     },
     "autoload": {
         "psr-4": {
