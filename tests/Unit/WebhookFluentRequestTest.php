@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Cjmellor\FalAi\FalAi;
 use Cjmellor\FalAi\Support\FluentRequest;
-use InvalidArgumentException;
 
 it('sets webhook url with withWebhook', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
@@ -20,14 +19,14 @@ it('sets webhook url with withWebhook', function (): void {
 it('validates webhook url', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
 
-    expect(fn () => $request->withWebhook('not-a-valid-url'))
+    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $request->withWebhook('not-a-valid-url'))
         ->toThrow(InvalidArgumentException::class, 'Invalid webhook URL provided');
 });
 
 it('requires https for webhook url', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
 
-    expect(fn () => $request->withWebhook('http://example.com/webhook'))
+    expect(fn (): \Cjmellor\FalAi\Support\FluentRequest => $request->withWebhook('http://example.com/webhook'))
         ->toThrow(InvalidArgumentException::class, 'Webhook URL must use HTTPS');
 });
 

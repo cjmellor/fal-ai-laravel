@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
 use Cjmellor\FalAi\Support\FluentRequest;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
@@ -18,20 +17,26 @@ beforeEach(function (): void {
     ]);
 });
 
-// Helper function to create fresh FluentRequest instances
-function createFluentRequest(): FluentRequest
-{
-    return new FluentRequest(new FalAi(), 'fal-ai/fast-sdxl');
-}
+// Note: createFluentRequest() function is now defined globally in tests/Pest.php
 
 describe('FluentRequest Dynamic Methods', function (): void {
-    it('can set data using dynamic methods', function (): void {
-        $request = createFluentRequest()->prompt('A beautiful sunset');
+    it('handles dynamic methods with proper conversion and chaining', function (string $method, mixed $value, string $expectedKey): void {
+        $request = createFluentRequest()->{$method}($value);
 
-        expect($request->toArray())->toBe([
-            'prompt' => 'A beautiful sunset',
-        ]);
-    });
+        expect($request)
+            ->toBeInstanceOf(FluentRequest::class)
+            ->toArray()->toHaveKey($expectedKey)
+            ->and($request->toArray()[$expectedKey])->toBe($value)
+            ->and($request->toJson())->toContain(json_encode($value));
+    })->with([
+        'prompt' => ['prompt', 'A beautiful sunset', 'prompt'],
+        'imageSize' => ['imageSize', '1024x1024', 'image_size'],
+        'numInferenceSteps' => ['numInferenceSteps', 50, 'num_inference_steps'],
+        'guidanceScale' => ['guidanceScale', 7.5, 'guidance_scale'],
+        'negativePrompt' => ['negativePrompt', 'ugly, blurry', 'negative_prompt'],
+        'numImages' => ['numImages', 4, 'num_images'],
+        'seed' => ['seed', 12345, 'seed'],
+    ]);
 
     it('can use queue method in fluent chain', function (): void {
         $request = createFluentRequest()
@@ -72,17 +77,17 @@ describe('FluentRequest Dynamic Methods', function (): void {
         ]);
     });
 
-    it('queue method sets correct queue URL', function (): void {
-        $request = createFluentRequest()->queue();
+    it('sets correct base URLs for different execution modes', function (string $method, string $expectedUrl): void {
+        $request = createFluentRequest()->{$method}();
 
-        expect($request->getBaseUrlOverride())->toBe('https://queue.fal.run');
-    });
-
-    it('sync method sets correct sync URL', function (): void {
-        $request = createFluentRequest()->sync();
-
-        expect($request->getBaseUrlOverride())->toBe('https://fal.run');
-    });
+        expect($request)
+            ->toBeInstanceOf(FluentRequest::class)
+            ->getBaseUrlOverride()->toBe($expectedUrl)
+            ->and($request->toArray())->toBeArray();
+    })->with([
+        'queue method' => ['queue', 'https://queue.fal.run'],
+        'sync method' => ['sync', 'https://fal.run'],
+    ]);
 
     it('converts camelCase methods to snake_case keys', function (): void {
         $request = createFluentRequest()
@@ -113,22 +118,35 @@ describe('FluentRequest Dynamic Methods', function (): void {
 });
 
 describe('FluentRequest Immutable Methods', function (): void {
-    it('can create immutable copies with withImmutable()', function (): void {
+    it('creates proper immutable copies maintaining original state', function (string $method, mixed $originalValue, mixed $newValue): void {
+        $original = createFluentRequest()->{$method}($originalValue);
+        $immutableMethod = $method.'Immutable';
+        $copy = $original->{$immutableMethod}($newValue);
+
+        expect($original)
+            ->not->toBe($copy)
+            ->toBeInstanceOf(FluentRequest::class)
+            ->toArray()->toContain($originalValue)
+            ->and($copy)
+            ->toBeInstanceOf(FluentRequest::class)
+            ->toArray()->toContain($newValue)
+            ->and($original->toArray())->not->toContain($newValue)
+            ->and($copy->toArray())->not->toContain($originalValue);
+    })->with([
+        'prompt' => ['prompt', 'Original prompt', 'New prompt'],
+        'imageSize' => ['imageSize', '512x512', '1024x1024'],
+        'seed' => ['seed', 12345, 67890],
+        'guidanceScale' => ['guidanceScale', 6.0, 8.5],
+    ]);
+
+    it('supports withImmutable for bulk updates', function (): void {
         $original = createFluentRequest()->prompt('Original prompt');
-        $copy = $original->withImmutable(['prompt' => 'New prompt']);
+        $copy = $original->withImmutable(['prompt' => 'New prompt', 'seed' => 999]);
 
-        expect($original->toArray())->toBe(['prompt' => 'Original prompt'])
-            ->and($copy->toArray())->toBe(['prompt' => 'New prompt'])
-            ->and($original)->not->toBe($copy);
-    });
-
-    it('can create immutable copies with dynamic immutable methods', function (): void {
-        $original = createFluentRequest()->prompt('Original prompt');
-        $copy = $original->promptImmutable('New prompt');
-
-        expect($original->toArray())->toBe(['prompt' => 'Original prompt'])
-            ->and($copy->toArray())->toBe(['prompt' => 'New prompt'])
-            ->and($original)->not->toBe($copy);
+        expect($original)
+            ->not->toBe($copy)
+            ->toArray()->toBe(['prompt' => 'Original prompt'])
+            ->and($copy->toArray())->toBe(['prompt' => 'New prompt', 'seed' => 999]);
     });
 
     it('maintains original instance when using immutable methods', function (): void {
@@ -202,6 +220,31 @@ describe('FluentRequest Data Handling', function (): void {
 });
 
 describe('FluentRequest Conditional Methods', function (): void {
+    it('handles conditional methods correctly based on conditions', function (string $method, bool $condition, bool $shouldExecute): void {
+        $executed = false;
+        $testKey = 'conditional_test';
+        $testValue = 'executed';
+
+        $request = createFluentRequest()
+            ->prompt('Base prompt')
+            ->{$method}($condition, function ($req) use (&$executed, $testKey, $testValue) {
+                $executed = true;
+
+                return $req->with([$testKey => $testValue]);
+            });
+
+        expect($executed)->toBe($shouldExecute)
+            ->and($request->toArray())
+            ->when($shouldExecute, fn ($arr): \Pest\Mixins\Expectation => $arr->toHaveKey($testKey))
+            ->when(! $shouldExecute, fn ($arr) => $arr->not->toHaveKey($testKey))
+            ->toHaveKey('prompt'); // Base prompt should always be there
+    })->with([
+        'when true executes' => ['when', true, true],
+        'when false skips' => ['when', false, false],
+        'unless true skips' => ['unless', true, false],
+        'unless false executes' => ['unless', false, true],
+    ]);
+
     it('works with when() method - condition true', function (): void {
         $request = createFluentRequest()
             ->prompt('A beautiful sunset')

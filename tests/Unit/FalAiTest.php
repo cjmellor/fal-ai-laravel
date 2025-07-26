@@ -10,7 +10,6 @@ use Cjmellor\FalAi\Requests\GetResultRequest;
 use Cjmellor\FalAi\Requests\SubmitRequest;
 use Cjmellor\FalAi\Responses\SubmitResponse;
 use Cjmellor\FalAi\Support\FluentRequest;
-use Mockery;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 

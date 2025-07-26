@@ -7,19 +7,17 @@ use Cjmellor\FalAi\Middleware\VerifyFalWebhook;
 use Cjmellor\FalAi\Services\WebhookVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Log;
-use Mockery;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->mockVerifier = Mockery::mock(WebhookVerifier::class);
     $this->middleware = new VerifyFalWebhook($this->mockVerifier);
 });
 
-afterEach(function () {
+afterEach(function (): void {
     Mockery::close();
 });
 
-it('passes request when verification succeeds', function () {
+it('passes request when verification succeeds', function (): void {
     $request = Request::create('/webhook', 'POST', [], [], [], [
         'HTTP_X_FAL_WEBHOOK_REQUEST_ID' => 'test-id',
         'HTTP_X_FAL_WEBHOOK_USER_ID' => 'user-123',
@@ -34,7 +32,7 @@ it('passes request when verification succeeds', function () {
         ->andReturn(true);
 
     $nextCalled = false;
-    $next = function ($req) use (&$nextCalled) {
+    $next = function ($req) use (&$nextCalled): \Illuminate\Http\Response {
         $nextCalled = true;
 
         return new Response('Success');
@@ -46,7 +44,9 @@ it('passes request when verification succeeds', function () {
     expect($response->getContent())->toBe('Success');
 });
 
-it('returns unauthorized when verification fails', function () {
+it('returns unauthorized when verification fails', function (): void {
+    config(['app.debug' => false]); // Ensure consistent behavior
+
     $request = Request::create('/webhook', 'POST', [], [], [], [
         'HTTP_X_FAL_WEBHOOK_REQUEST_ID' => 'test-id',
         'HTTP_X_FAL_WEBHOOK_USER_ID' => 'user-123',
@@ -61,7 +61,7 @@ it('returns unauthorized when verification fails', function () {
         ->andThrow(new WebhookVerificationException('Invalid signature'));
 
     $nextCalled = false;
-    $next = function ($req) use (&$nextCalled) {
+    $next = function ($req) use (&$nextCalled): \Illuminate\Http\Response {
         $nextCalled = true;
 
         return new Response('Success');
@@ -80,7 +80,7 @@ it('returns unauthorized when verification fails', function () {
     ]);
 });
 
-it('logs verification failure details', function () {
+it('logs verification failure details', function (): void {
     $request = Request::create('/webhook', 'POST', [], [], [], [
         'HTTP_X_FAL_WEBHOOK_REQUEST_ID' => 'test-id',
         'HTTP_X_FAL_WEBHOOK_USER_ID' => 'user-123',
@@ -97,7 +97,7 @@ it('logs verification failure details', function () {
         ->with($request)
         ->andThrow(new WebhookVerificationException('Timestamp too old'));
 
-    $next = function ($req) {
+    $next = function ($req): \Illuminate\Http\Response {
         return new Response('Success');
     };
 
@@ -106,16 +106,18 @@ it('logs verification failure details', function () {
     expect($response->getStatusCode())->toBe(401);
 });
 
-it('works with different verification errors', function () {
+it('works with different verification errors', function (string $errorMessage, string $expectedMessage): void {
+    config(['app.debug' => false]); // Ensure debug is off for consistent testing
+
     $request = Request::create('/webhook', 'POST');
 
     $this->mockVerifier
         ->shouldReceive('verify')
         ->once()
         ->with($request)
-        ->andThrow(new WebhookVerificationException('Missing required headers'));
+        ->andThrow(new WebhookVerificationException($errorMessage));
 
-    $next = function ($req) {
+    $next = function ($req): \Illuminate\Http\Response {
         return new Response('Success');
     };
 
@@ -126,7 +128,38 @@ it('works with different verification errors', function () {
     $responseData = json_decode($response->getContent(), true);
     expect($responseData)->toBe([
         'error' => 'Webhook verification failed',
-        'message' => 'Invalid webhook signature',
+        'message' => $expectedMessage,
+    ]);
+})->with([
+    'missing headers' => ['Missing required headers', 'Invalid webhook signature'],
+    'timestamp too old' => ['Timestamp too old', 'Invalid webhook signature'],
+    'invalid signature' => ['Invalid signature format', 'Invalid webhook signature'],
+]);
+
+it('shows actual error message in debug mode', function (): void {
+    config(['app.debug' => true]);
+
+    $request = Request::create('/webhook', 'POST');
+    $actualError = 'Missing required headers';
+
+    $this->mockVerifier
+        ->shouldReceive('verify')
+        ->once()
+        ->with($request)
+        ->andThrow(new WebhookVerificationException($actualError));
+
+    $next = function ($req): \Illuminate\Http\Response {
+        return new Response('Success');
+    };
+
+    $response = $this->middleware->handle($request, $next);
+
+    expect($response->getStatusCode())->toBe(401);
+
+    $responseData = json_decode($response->getContent(), true);
+    expect($responseData)->toBe([
+        'error' => 'Webhook verification failed',
+        'message' => $actualError,
     ]);
 });
 

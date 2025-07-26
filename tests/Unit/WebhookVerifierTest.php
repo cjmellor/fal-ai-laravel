@@ -7,7 +7,6 @@ use Cjmellor\FalAi\Services\WebhookVerifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use ReflectionClass;
 
 beforeEach(function (): void {
     $this->verifier = new WebhookVerifier();

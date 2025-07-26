@@ -14,7 +14,7 @@ covers(SubmitResponse::class);
 covers(StatusResponse::class);
 covers(ResultResponse::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     MockClient::destroyGlobal();
 
     config([
@@ -26,8 +26,8 @@ beforeEach(function () {
     $this->falAi = new FalAi();
 });
 
-describe('SubmitResponse Features', function () {
-    beforeEach(function () {
+describe('SubmitResponse Features', function (): void {
+    beforeEach(function (): void {
         $this->submitResponseData = [
             'status' => 'IN_QUEUE',
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
@@ -40,7 +40,7 @@ describe('SubmitResponse Features', function () {
         ];
     });
 
-    it('provides direct property access to response data', function () {
+    it('provides direct property access to response data', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
@@ -55,7 +55,7 @@ describe('SubmitResponse Features', function () {
             ->response_url->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
     });
 
-    it('provides convenience methods for common operations', function () {
+    it('provides convenience methods for common operations', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
@@ -69,7 +69,7 @@ describe('SubmitResponse Features', function () {
             ->getResponseUrl()->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
     });
 
-    it('maintains backward compatibility with json() method', function () {
+    it('maintains backward compatibility with json() method', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
@@ -83,14 +83,14 @@ describe('SubmitResponse Features', function () {
     });
 });
 
-describe('StatusResponse Features', function () {
+describe('StatusResponse Features', function (): void {
     dataset('status_responses', [
         'in_queue' => ['IN_QUEUE', 5, ['isInQueue' => true, 'isInProgress' => false, 'isCompleted' => false]],
         'in_progress' => ['IN_PROGRESS', null, ['isInQueue' => false, 'isInProgress' => true, 'isCompleted' => false]],
         'completed' => ['COMPLETED', null, ['isInQueue' => false, 'isInProgress' => false, 'isCompleted' => true]],
     ]);
 
-    it('provides fluent status checking methods', function (string $status, ?int $queuePosition, array $expectedMethods) {
+    it('provides fluent status checking methods', function (string $status, ?int $queuePosition, array $expectedMethods): void {
         $statusData = [
             'status' => $status,
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
@@ -117,7 +117,7 @@ describe('StatusResponse Features', function () {
             ->isCompleted()->toBe($expectedMethods['isCompleted']);
     })->with('status_responses');
 
-    it('provides direct property access and convenience methods', function () {
+    it('provides direct property access and convenience methods', function (): void {
         $statusData = [
             'status' => 'COMPLETED',
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
@@ -143,8 +143,8 @@ describe('StatusResponse Features', function () {
     });
 });
 
-describe('ResultResponse Features', function () {
-    beforeEach(function () {
+describe('ResultResponse Features', function (): void {
+    beforeEach(function (): void {
         $this->resultData = [
             'images' => [
                 [
@@ -167,7 +167,7 @@ describe('ResultResponse Features', function () {
         ];
     });
 
-    it('provides direct property access to result data', function () {
+    it('provides direct property access to result data', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
@@ -194,7 +194,7 @@ describe('ResultResponse Features', function () {
         'imageUrl' => 'imageUrl',
     ]);
 
-    it('provides multiple ways to access the primary image', function (string $property) {
+    it('provides multiple ways to access the primary image', function (string $property): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
@@ -209,7 +209,7 @@ describe('ResultResponse Features', function () {
         }
     })->with('image_access_properties');
 
-    it('provides convenient image metadata access', function () {
+    it('provides convenient image metadata access', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
@@ -225,7 +225,7 @@ describe('ResultResponse Features', function () {
             ->fileSize->toBe(245760);
     });
 
-    it('provides convenient generation metadata access', function () {
+    it('provides convenient generation metadata access', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
@@ -244,7 +244,7 @@ describe('ResultResponse Features', function () {
             ]);
     });
 
-    it('handles missing image data gracefully', function () {
+    it('handles missing image data gracefully', function (): void {
         $emptyResultData = [
             'images' => [],
             'timings' => ['inference' => 0.1],
@@ -273,8 +273,8 @@ describe('ResultResponse Features', function () {
     });
 });
 
-describe('Fluent API Integration', function () {
-    it('works seamlessly with the fluent API', function () {
+describe('Fluent API Integration', function (): void {
+    it('works seamlessly with the fluent API', function (): void {
         $submitData = [
             'status' => 'IN_QUEUE',
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
@@ -303,8 +303,8 @@ describe('Fluent API Integration', function () {
     });
 });
 
-describe('Backward Compatibility', function () {
-    it('maintains full backward compatibility for all response types', function () {
+describe('Backward Compatibility', function (): void {
+    it('maintains full backward compatibility for all response types', function (): void {
         // Submit response
         $submitData = [
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
