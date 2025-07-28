@@ -151,13 +151,13 @@ use Illuminate\Support\Facades\Route;
 Route::post('/webhooks/fal', function (Request $request) {
     $payload = $request->json()->all();
     
-    if ($payload['status'] === 'COMPLETED') {
+    if ($payload['status'] === 'OK') {
         $images = $payload['data']['images'];
         // Process successful results
         foreach ($images as $image) {
             // Save image URL: $image['url']
         }
-    } elseif ($payload['status'] === 'FAILED') {
+    } elseif ($payload['status'] === 'ERROR') {
         $error = $payload['error'];
         // Handle error
     }
@@ -176,14 +176,14 @@ use Illuminate\Support\Facades\Route;
 Route::post('/webhooks/fal-custom', function (Request $request) {
     $payload = $request->json()->all();
     
-    if ($payload['status'] === 'COMPLETED') {
+    if ($payload['status'] === 'OK') {
         $images = $payload['data']['images'];
         // Process successful results
         foreach ($images as $image) {
             // Save image URL: $image['url']
             // Custom processing logic here
         }
-    } elseif ($payload['status'] === 'FAILED') {
+    } elseif ($payload['status'] === 'ERROR') {
         $error = $payload['error'];
         // Handle error with custom logic
     }
@@ -227,7 +227,7 @@ Route::post('/webhooks/fal-manual', function (Request $request) {
 ```json
 {
     "request_id": "req_123456789",
-    "status": "COMPLETED",
+    "status": "OK",
     "data": {
         "images": [
             {
@@ -249,7 +249,7 @@ Route::post('/webhooks/fal-manual', function (Request $request) {
 ```json
 {
     "request_id": "req_123456789",
-    "status": "FAILED",
+    "status": "ERROR",
     "error": {
         "type": "ValidationError",
         "message": "Invalid prompt provided"
