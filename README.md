@@ -99,9 +99,6 @@ $response = $falAi->model('fal-ai/flux/schnell')
 
 ## Webhook Support
 
-> [!NOTE]
-> For comprehensive webhook documentation, see the [Webhook Guide](docs/webhook-guide.md)
-
 ### Making Requests with Webhooks
 
 When you add a webhook URL to your request, it automatically switches to queue mode:
