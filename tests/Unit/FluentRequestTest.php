@@ -235,7 +235,7 @@ describe('FluentRequest Conditional Methods', function (): void {
 
         expect($executed)->toBe($shouldExecute)
             ->and($request->toArray())
-            ->when($shouldExecute, fn ($arr): Pest\Mixins\Expectation => $arr->toHaveKey($testKey))
+            ->when($shouldExecute, fn ($arr) => $arr->toHaveKey($testKey))
             ->when(! $shouldExecute, fn ($arr) => $arr->not->toHaveKey($testKey))
             ->toHaveKey('prompt'); // Base prompt should always be there
     })->with([

@@ -6,10 +6,12 @@ namespace Cjmellor\FalAi\Support;
 
 use Cjmellor\FalAi\Contracts\FluentRequestInterface;
 use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Responses\StreamResponse;
 use Cjmellor\FalAi\Responses\SubmitResponse;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
 use InvalidArgumentException;
+use Throwable;
 
 class FluentRequest implements FluentRequestInterface
 {
@@ -72,16 +74,6 @@ class FluentRequest implements FluentRequestInterface
     }
 
     /**
-     * Set the request to use the queue endpoint explicitly
-     */
-    public function queue(): self
-    {
-        $this->baseUrlOverride = 'https://queue.fal.run';
-
-        return $this;
-    }
-
-    /**
      * Set the request to use the sync endpoint
      */
     public function sync(): self
@@ -94,6 +86,8 @@ class FluentRequest implements FluentRequestInterface
     /**
      * Set the webhook URL for asynchronous notifications
      * Automatically switches to queue endpoint when webhook is specified
+     *
+     * @throws Throwable
      */
     public function withWebhook(string $url): self
     {
@@ -104,7 +98,7 @@ class FluentRequest implements FluentRequestInterface
         );
 
         throw_unless(
-            Str::startsWith($url, 'https://'),
+            Str::startsWith(haystack: $url, needles: 'https://'),
             InvalidArgumentException::class,
             'Webhook URL must use HTTPS'
         );
@@ -118,11 +112,34 @@ class FluentRequest implements FluentRequestInterface
     }
 
     /**
+     * Set the request to use the queue endpoint explicitly
+     */
+    public function queue(): self
+    {
+        $this->baseUrlOverride = 'https://queue.fal.run';
+
+        return $this;
+    }
+
+    /**
      * Execute the request
      */
     public function run(): SubmitResponse
     {
         return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride, $this->webhookUrl);
+    }
+
+    /**
+     * Execute the request with streaming response.
+     *
+     * Automatically uses fal.run base URL and appends /stream to the endpoint.
+     */
+    public function stream(): StreamResponse
+    {
+        // Force sync endpoint for streaming (fal.run, not queue.fal.run)
+        $streamingBaseUrl = 'https://fal.run';
+
+        return $this->falAi->stream($this->data, $this->modelId, $streamingBaseUrl);
     }
 
     /**
