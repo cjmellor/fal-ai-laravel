@@ -10,17 +10,18 @@
 
 A Laravel package for integrating with the Fal.ai API, providing a fluent interface for AI model interactions with built-in webhook support.
 
-## Features
+## ✨ Features
 
 - 🚀 **Fluent API** - Chainable methods for easy request building
 - 🔗 **Webhook Support** - Secure webhook handling with ED25519 signature verification
 - ⚡ **Queue & Sync Modes** - Support for both immediate and queued requests
+- 📡 **Real-time Streaming** - Server-Sent Events (SSE) support for progressive AI model responses
 - 🛡️ **Security** - Built-in webhook verification middleware
 - 🧪 **Well Tested** - Comprehensive test suite
 - 📝 **Laravel Integration** - Native Laravel middleware and service provider
 - 🛣️ **Built-in Routes** - Pre-configured webhook endpoints ready to use
 
-## Installation
+## 📦 Installation
 
 Install the package via Composer:
 
@@ -40,9 +41,9 @@ Add your Fal.ai API key to your `.env` file:
 FAL_API_KEY=your_fal_api_key_here
 ```
 
-## Basic Usage
+## 🚀 Basic Usage
 
-### Simple Request
+### 🎯 Simple Request
 
 ```php
 use FalAi\FalAi;
@@ -55,12 +56,12 @@ $response = $falAi->model('fal-ai/flux/schnell')
     ->run();
 ```
 
-### Queue vs Sync Modes
+### ⚡ Queue vs Sync Modes
 
 > [!TIP]
 > **Queue mode** is the default and recommended for most use cases. It's perfect for complex generations that take time to process.
 
-#### Queue Mode (Default)
+#### 📋 Queue Mode (Default)
 
 ```php
 $response = $falAi->model('fal-ai/flux/dev')
@@ -77,7 +78,7 @@ $response = $falAi->model('fal-ai/flux/dev')
 - You don't need immediate results
 - Working with complex prompts or large image sizes
 
-#### Sync Mode
+#### ⚡ Sync Mode
 
 ```php
 $response = $falAi->model('fal-ai/flux/schnell')
@@ -97,9 +98,9 @@ $response = $falAi->model('fal-ai/flux/schnell')
 > [!WARNING]
 > Sync mode may timeout for complex requests. Use queue mode for production applications.
 
-## Webhook Support
+## 🔗 Webhook Support
 
-### Making Requests with Webhooks
+### 📤 Making Requests with Webhooks
 
 When you add a webhook URL to your request, it automatically switches to queue mode:
 
@@ -113,17 +114,17 @@ $response = $falAi->model('fal-ai/flux/schnell')
 // Returns: ['request_id' => 'req_123...', 'status' => 'IN_QUEUE']
 ```
 
-### Webhook URL Requirements
+### 📋 Webhook URL Requirements
 
 - Must be a valid HTTPS URL
 - Must be publicly accessible
 - Should respond with 2xx status codes
 
-### Setting Up Webhook Endpoints
+### 🛠️ Setting Up Webhook Endpoints
 
 You have two options for handling webhooks: use the built-in route or create your own custom endpoint.
 
-#### Option 1: Built-in Webhook Route (Easiest)
+#### 🎯 Option 1: Built-in Webhook Route (Easiest)
 
 The package includes a pre-configured webhook route at `/webhooks/fal` that handles basic webhook processing:
 
@@ -141,7 +142,7 @@ $response = $falAi->model('fal-ai/flux/schnell')
 > [!TIP]
 > The built-in route automatically verifies webhooks and returns appropriate responses. Perfect for getting started quickly!
 
-#### Option 2: Custom Webhook Endpoint (Recommended for Production)
+#### 🏭 Option 2: Custom Webhook Endpoint (Recommended for Production)
 
 ```php
 use FalAi\Middleware\VerifyFalWebhook;
@@ -192,7 +193,7 @@ Route::post('/webhooks/fal-custom', function (Request $request) {
 })->middleware(VerifyFalWebhook::class);
 ```
 
-#### Option 3: Manual Verification (Advanced)
+#### 🔧 Option 3: Manual Verification (Advanced)
 
 For complete control over the verification process:
 
@@ -220,9 +221,9 @@ Route::post('/webhooks/fal-manual', function (Request $request) {
 });
 ```
 
-### Webhook Payload Examples
+### 📄 Webhook Payload Examples
 
-#### Successful Completion
+#### ✅ Successful Completion
 
 ```json
 {
@@ -244,7 +245,7 @@ Route::post('/webhooks/fal-manual', function (Request $request) {
 }
 ```
 
-#### Error
+#### ❌ Error
 
 ```json
 {
@@ -295,7 +296,7 @@ FAL_WEBHOOK_TIMESTAMP_TOLERANCE=300
 FAL_WEBHOOK_VERIFICATION_TIMEOUT=10
 ```
 
-## Available Models
+## 🤖 Available Models
 
 The package supports all Fal.ai models. Some popular ones include:
 
@@ -311,9 +312,9 @@ The package supports all Fal.ai models. Some popular ones include:
 - `fal-ai/aura-flow` - High-quality text-to-image
 - `fal-ai/ideogram/v2` - Excellent typography handling
 
-## Fluent API Methods
+## 🔗 Fluent API Methods
 
-### Common Methods
+### 🛠️ Common Methods
 
 ```php
 $request = $falAi->model('fal-ai/flux/schnell')
@@ -326,7 +327,7 @@ $request = $falAi->model('fal-ai/flux/schnell')
     ->sync();                              // Use sync mode
 ```
 
-## Error Handling
+## ⚠️ Error Handling
 
 > [!IMPORTANT]
 > Always implement proper error handling in production applications to gracefully handle API failures and webhook verification issues.
@@ -357,6 +358,36 @@ try {
 }
 ```
 
+## 📡 Streaming
+
+The Fal.ai Laravel package supports real-time streaming responses using Server-Sent Events (SSE). This is particularly useful for AI models that generate content progressively, such as text generation or image creation with intermediate steps.
+
+### 🎯 Basic Streaming Usage
+
+To use streaming, call the `stream()` method instead of `run()` or `queue()`:
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$streamResponse = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A beautiful sunset over mountains')
+    ->imageSize('landscape_4_3')
+    ->stream();
+
+    $streamResponse->getResponse();
+}
+```
+
+### 📊 Streaming vs Regular Requests
+
+| Feature | Regular Request | Streaming Request |
+|---------|----------------|-------------------|
+| Response Time | Wait for completion | Real-time updates |
+| User Experience | Loading spinner | Progress indicators |
+| Resource Usage | Lower | Slightly higher |
+| Complexity | Simple | Moderate |
+| Best For | Simple workflows | Interactive applications |
+
 ## 🧪 Testing
 
 Run the test suite:
@@ -365,12 +396,20 @@ Run the test suite:
 composer test
 ```
 
+### 📝 Important Notes
+
+- Streaming requests always use the `https://fal.run` endpoint regardless of configuration
+- Not all Fal.ai models support streaming - check the model documentation
+- Streaming responses cannot be cached like regular responses
+- Consider implementing proper error handling for network interruptions
+- Use streaming for models that benefit from progressive updates (text generation, multi-step image creation)
+
 ## 🔒 Security
 
 > [!CAUTION]
 > Webhook security is critical for protecting your application from malicious requests. Always use the provided verification mechanisms.
 
-### Webhook Security
+### 🔐 Webhook Security
 
 This package implements Fal.ai's webhook verification using:
 
@@ -379,7 +418,7 @@ This package implements Fal.ai's webhook verification using:
 - **JWKS caching** for performance
 - **Automatic header extraction** and validation
 
-### Best Practices
+### 💡 Best Practices
 
 > [!TIP]
 > Follow these security practices to ensure your webhook endpoints are secure:
