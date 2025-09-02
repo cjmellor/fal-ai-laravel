@@ -258,6 +258,44 @@ Route::post('/webhooks/fal-manual', function (Request $request) {
 }
 ```
 
+## 📡 Streaming
+
+The Fal.ai Laravel package supports real-time streaming responses using Server-Sent Events (SSE). This is particularly useful for AI models that generate content progressively, such as text generation or image creation with intermediate steps.
+
+### 🎯 Basic Streaming Usage
+
+To use streaming, call the `stream()` method instead of `run()` or `queue()`:
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$streamResponse = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A beautiful sunset over mountains')
+    ->imageSize('landscape_4_3')
+    ->stream();
+
+    $streamResponse->getResponse();
+}
+```
+
+### 📊 Streaming vs Regular Requests
+
+| Feature | Regular Request | Streaming Request |
+|---------|----------------|-------------------|
+| Response Time | Wait for completion | Real-time updates |
+| User Experience | Loading spinner | Progress indicators |
+| Resource Usage | Lower | Slightly higher |
+| Complexity | Simple | Moderate |
+| Best For | Simple workflows | Interactive applications |
+
+### 📝 Important Notes
+
+- Streaming requests always use the `https://fal.run` endpoint regardless of configuration
+- Not all Fal.ai models support streaming - check the model documentation
+- Streaming responses cannot be cached like regular responses
+- Consider implementing proper error handling for network interruptions
+- Use streaming for models that benefit from progressive updates (text generation, multi-step image creation)
+
 ## ⚙️ Configuration
 
 > [!NOTE]
@@ -358,36 +396,6 @@ try {
 }
 ```
 
-## 📡 Streaming
-
-The Fal.ai Laravel package supports real-time streaming responses using Server-Sent Events (SSE). This is particularly useful for AI models that generate content progressively, such as text generation or image creation with intermediate steps.
-
-### 🎯 Basic Streaming Usage
-
-To use streaming, call the `stream()` method instead of `run()` or `queue()`:
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-$streamResponse = FalAi::model('fal-ai/flux/schnell')
-    ->prompt('A beautiful sunset over mountains')
-    ->imageSize('landscape_4_3')
-    ->stream();
-
-    $streamResponse->getResponse();
-}
-```
-
-### 📊 Streaming vs Regular Requests
-
-| Feature | Regular Request | Streaming Request |
-|---------|----------------|-------------------|
-| Response Time | Wait for completion | Real-time updates |
-| User Experience | Loading spinner | Progress indicators |
-| Resource Usage | Lower | Slightly higher |
-| Complexity | Simple | Moderate |
-| Best For | Simple workflows | Interactive applications |
-
 ## 🧪 Testing
 
 Run the test suite:
@@ -395,14 +403,6 @@ Run the test suite:
 ```bash
 composer test
 ```
-
-### 📝 Important Notes
-
-- Streaming requests always use the `https://fal.run` endpoint regardless of configuration
-- Not all Fal.ai models support streaming - check the model documentation
-- Streaming responses cannot be cached like regular responses
-- Consider implementing proper error handling for network interruptions
-- Use streaming for models that benefit from progressive updates (text generation, multi-step image creation)
 
 ## 🔒 Security
 
