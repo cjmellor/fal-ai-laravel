@@ -334,22 +334,6 @@ FAL_WEBHOOK_TIMESTAMP_TOLERANCE=300
 FAL_WEBHOOK_VERIFICATION_TIMEOUT=10
 ```
 
-## 🤖 Available Models
-
-The package supports all Fal.ai models. Some popular ones include:
-
-**FLUX Models (Recommended):**
-- `fal-ai/flux/schnell` - Fast image generation (1-4 steps)
-- `fal-ai/flux/dev` - High-quality image generation (12B parameters)
-- `fal-ai/flux/pro` - Professional grade (API only)
-- `fal-ai/flux-lora` - FLUX with LoRA support
-
-**Other Popular Models:**
-- `fal-ai/stable-diffusion-v35-large` - Latest Stable Diffusion 3.5
-- `fal-ai/recraft/v3` - Vector art and typography
-- `fal-ai/aura-flow` - High-quality text-to-image
-- `fal-ai/ideogram/v2` - Excellent typography handling
-
 ## 🔗 Fluent API Methods
 
 ### 🛠️ Common Methods
