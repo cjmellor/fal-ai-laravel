@@ -32,4 +32,6 @@ Route::post('/webhooks/fal', function (Request $request) {
 
     // Unknown status
     return response()->json(['status' => 'unknown']);
-})->middleware(VerifyFalWebhook::class);
+})
+    ->middleware(VerifyFalWebhook::class)
+    ->name('webhooks.fal');
