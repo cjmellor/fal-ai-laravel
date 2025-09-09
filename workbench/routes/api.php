@@ -91,7 +91,7 @@ Route::post('/webhooks/fal', function (Request $request) {
         'payload' => $payload,
         'headers' => $request->headers->all(),
     ]);
-    
+
     if (isset($payload['status']) && $payload['status'] === 'OK') {
         $requestId = $payload['request_id'];
         $gatewayRequestId = $payload['gateway_request_id'] ?? $requestId;
@@ -194,6 +194,7 @@ Route::post(uri: '/test-stream', action: function (Request $request) {
         $streamResponse = FalAi::model(modelId: 'fal-ai/flux-1/krea')
             ->prompt('A beautiful young Thai lady wearing a bikini on the beaches in Thailand at night time')
             ->stream();
+
         return $streamResponse->getResponse();
     } catch (SSEProtocolException $e) {
         return response()->json([
