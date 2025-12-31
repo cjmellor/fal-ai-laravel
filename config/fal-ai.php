@@ -30,6 +30,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | FalAi.ai Platform API Base URL
+    |--------------------------------------------------------------------------
+    |
+    | This value is the base URL for the FalAi.ai Platform APIs (pricing,
+    | usage, analytics, etc.). This is separate from the model execution APIs.
+    |
+    */
+
+    'platform_base_url' => 'https://api.fal.ai',
+
+    /*
+    |--------------------------------------------------------------------------
     | FalAi.ai API Timeout
     |--------------------------------------------------------------------------
     |

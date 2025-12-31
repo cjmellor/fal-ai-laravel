@@ -98,6 +98,56 @@ $response = $falAi->model('fal-ai/flux/schnell')
 > [!WARNING]
 > Sync mode may timeout for complex requests. Use queue mode for production applications.
 
+#### 🛰️ Polling Request Status
+You can poll the status of a queued request (useful when not using webhooks). Set includeLogs to true to retrieve execution logs.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$status = FalAi::status('req_123456789', includeLogs: true);
+
+if ($status->isInProgress()) {
+    $logs = $status->getLogs();
+}
+```
+
+#### 📦 Fetching Results by ID
+Fetch the final result payload for a completed request and use convenient accessors.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$result = FalAi::result('req_123456789');
+
+$firstImageUrl = $result->firstImageUrl; // Convenience accessor
+$all = $result->json();                  // Raw payload if you prefer
+```
+
+#### ⛔ Cancelling a Queued Request
+Cancel a queued request that hasn’t started processing yet.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+FalAi::cancel('req_123456789', modelId: 'fal-ai/flux/schnell');
+```
+
+#### 🧭 Submit Response Helpers
+Access useful URLs directly from the initial submit response.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A photorealistic fox in a forest')
+    ->queue()
+    ->run();
+
+$requestId = $response->getRequestId();
+$statusUrl = $response->getStatusUrl();
+$cancelUrl = $response->getCancelUrl();
+```
+
 ## 🔗 Webhook Support
 
 ### 📤 Making Requests with Webhooks
@@ -280,13 +330,13 @@ $streamResponse = FalAi::model('fal-ai/flux/schnell')
 
 ### 📊 Streaming vs Regular Requests
 
-| Feature | Regular Request | Streaming Request |
-|---------|----------------|-------------------|
-| Response Time | Wait for completion | Real-time updates |
-| User Experience | Loading spinner | Progress indicators |
-| Resource Usage | Lower | Slightly higher |
-| Complexity | Simple | Moderate |
-| Best For | Simple workflows | Interactive applications |
+| Feature         | Regular Request     | Streaming Request        |
+|-----------------|---------------------|--------------------------|
+| Response Time   | Wait for completion | Real-time updates        |
+| User Experience | Loading spinner     | Progress indicators      |
+| Resource Usage  | Lower               | Slightly higher          |
+| Complexity      | Simple              | Moderate                 |
+| Best For        | Simple workflows    | Interactive applications |
 
 ### 📝 Important Notes
 
@@ -334,6 +384,34 @@ FAL_WEBHOOK_TIMESTAMP_TOLERANCE=300
 FAL_WEBHOOK_VERIFICATION_TIMEOUT=10
 ```
 
+### 🎯 Using a Default Model
+Set a default model in config and omit the model ID in your calls.
+
+```php
+// config/fal-ai.php
+// 'default_model' => 'fal-ai/flux/schnell'
+
+use Cjmellor\FalAi\Facades\FalAi;
+
+$response = FalAi::model()
+    ->prompt('A cozy cabin in the woods')
+    ->run();
+```
+
+### 🌐 Overriding the Base URL
+If you need to direct a request to a specific Fal endpoint manually, you can override the base URL for a single call. The fluent builder already switches between queue and sync automatically in most cases.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$response = FalAi::runWithBaseUrl(
+    ['prompt' => 'A watercolor skyline at dawn'],
+    modelId: 'fal-ai/flux/schnell',
+    baseUrlOverride: 'https://queue.fal.run',
+    webhookUrl: 'https://example.com/webhooks/fal'
+);
+```
+
 ## 🔗 Fluent API Methods
 
 ### 🛠️ Common Methods
@@ -347,6 +425,21 @@ $request = $falAi->model('fal-ai/flux/schnell')
     ->withWebhook('https://...')           // Add webhook URL
     ->queue()                              // Use queue mode
     ->sync();                              // Use sync mode
+```
+
+### 🧰 Adding and Inspecting Payload Data
+Enrich the request body with `with([...])` and dynamic setters. You can also inspect what will be sent.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$request = FalAi::model('fal-ai/flux/schnell')
+    ->with(['num_images' => 2])
+    ->imageSize('square_hd')
+    ->prompt('An astronaut riding a horse');
+
+$payload = $request->toArray();
+$response = $request->run();
 ```
 
 ## ⚠️ Error Handling
