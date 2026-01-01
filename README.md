@@ -16,6 +16,7 @@ A Laravel package for integrating with the Fal.ai API, providing a fluent interf
 - 🔗 **Webhook Support** - Secure webhook handling with ED25519 signature verification
 - ⚡ **Queue & Sync Modes** - Support for both immediate and queued requests
 - 📡 **Real-time Streaming** - Server-Sent Events (SSE) support for progressive AI model responses
+- 💰 **Platform API** - Access pricing, cost estimation, usage tracking, and analytics for models
 - 🛡️ **Security** - Built-in webhook verification middleware
 - 🧪 **Well Tested** - Comprehensive test suite
 - 📝 **Laravel Integration** - Native Laravel middleware and service provider
@@ -410,6 +411,336 @@ $response = FalAi::runWithBaseUrl(
     baseUrlOverride: 'https://queue.fal.run',
     webhookUrl: 'https://example.com/webhooks/fal'
 );
+```
+
+## 💰 Platform API
+
+The Platform API provides access to pricing information and cost estimation for Fal.ai models. This is separate from the model execution APIs and uses a different endpoint (`api.fal.ai`).
+
+### 📊 Get Model Pricing
+
+Retrieve pricing information for one or more model endpoints. Supports up to 50 endpoints per request.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+// Get pricing for multiple endpoints
+$pricing = FalAi::platform()
+    ->pricing()
+    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
+    ->get();
+
+// Or add endpoints individually
+$pricing = FalAi::platform()
+    ->pricing()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->forEndpoint('fal-ai/flux/schnell')
+    ->get();
+
+// Access pricing data
+$unitPrice = $pricing->getUnitPriceFor('fal-ai/flux/dev'); // 0.025
+$priceInfo = $pricing->getPriceFor('fal-ai/flux/dev');
+// ['endpoint_id' => 'fal-ai/flux/dev', 'unit_price' => 0.025, 'unit' => 'image', 'currency' => 'USD']
+```
+
+**Example Response:**
+
+```php
+[
+    'prices' => [
+        [
+            'endpoint_id' => 'fal-ai/flux/dev',
+            'unit_price' => 0.025,
+            'unit' => 'image',
+            'currency' => 'USD'
+        ],
+        [
+            'endpoint_id' => 'fal-ai/flux/schnell',
+            'unit_price' => 0.003,
+            'unit' => 'image',
+            'currency' => 'USD'
+        ]
+    ],
+    'has_more' => false,
+    'next_cursor' => null
+]
+```
+
+### 💵 Estimate Costs
+
+Estimate the cost of API usage before making requests. Supports two estimation modes: historical API price and unit price.
+
+#### Historical API Price Mode
+
+Estimate costs based on the number of API calls you plan to make.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$estimate = FalAi::platform()
+    ->estimateCost()
+    ->historicalApiPrice()
+    ->endpoint('fal-ai/flux/dev', callQuantity: 100)
+    ->endpoint('fal-ai/flux/schnell', callQuantity: 50)
+    ->estimate();
+
+echo "Total cost: $" . $estimate->totalCost; // 3.65
+```
+
+**Example Response:**
+
+```php
+[
+    'estimate_type' => 'historical_api_price',
+    'total_cost' => 3.65,
+    'currency' => 'USD'
+]
+```
+
+#### Unit Price Mode
+
+Estimate costs based on the number of billing units (e.g., images, megapixels).
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$estimate = FalAi::platform()
+    ->estimateCost()
+    ->unitPrice()
+    ->endpoint('fal-ai/flux/dev', unitQuantity: 100)
+    ->estimate();
+
+echo "Total cost: $" . $estimate->totalCost; // 2.50
+```
+
+**Example Response:**
+
+```php
+[
+    'estimate_type' => 'unit_price',
+    'total_cost' => 2.50,
+    'currency' => 'USD'
+]
+```
+
+#### Bulk Endpoint Estimation
+
+Set multiple endpoints at once using the `endpoints()` method:
+
+```php
+$estimate = FalAi::platform()
+    ->estimateCost()
+    ->historicalApiPrice()
+    ->endpoints([
+        'fal-ai/flux/dev' => ['call_quantity' => 100],
+        'fal-ai/flux/schnell' => ['call_quantity' => 50],
+    ])
+    ->estimate();
+```
+
+### 📊 Get Usage Data
+
+Access detailed usage line items with unit quantities, prices, and costs. Perfect for tracking your API consumption over time.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+// Get usage for specific endpoints
+$usage = FalAi::platform()
+    ->usage()
+    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
+    ->get();
+
+// Access usage data
+$timeSeries = $usage->timeSeries;
+$totalCost = $usage->getTotalCost();         // Total cost across all endpoints
+$totalQuantity = $usage->getTotalQuantity(); // Total units consumed
+```
+
+#### Filter by Date Range
+
+```php
+$usage = FalAi::platform()
+    ->usage()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->between('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z')
+    ->timeframe('day')  // Aggregate by: 'minute', 'hour', 'day', 'week', 'month'
+    ->timezone('America/New_York')
+    ->get();
+```
+
+#### Include Additional Data
+
+```php
+$usage = FalAi::platform()
+    ->usage()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->withTimeSeries()  // Include time-bucketed data (default)
+    ->withSummary()     // Include aggregate summary
+    ->withAuthMethod()  // Include auth method breakdown
+    ->get();
+
+// Access summary if included
+if ($usage->summary) {
+    echo "Total: $" . $usage->summary['total_cost'];
+}
+```
+
+#### Get Usage for Specific Endpoint
+
+```php
+$usage = FalAi::platform()
+    ->usage()
+    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
+    ->get();
+
+// Get cost for specific endpoint
+$devCost = $usage->getTotalCostFor('fal-ai/flux/dev');
+$schnellCost = $usage->getTotalCostFor('fal-ai/flux/schnell');
+
+// Get quantity for specific endpoint
+$devQuantity = $usage->getTotalQuantityFor('fal-ai/flux/dev');
+```
+
+**Example Response:**
+
+```php
+[
+    'time_series' => [
+        [
+            'bucket' => '2025-01-15T00:00:00-05:00',
+            'results' => [
+                [
+                    'endpoint_id' => 'fal-ai/flux/dev',
+                    'unit' => 'image',
+                    'quantity' => 10,
+                    'unit_price' => 0.025,
+                    'cost' => 0.25,
+                    'currency' => 'USD',
+                    'auth_method' => 'Production Key'
+                ]
+            ]
+        ]
+    ],
+    'has_more' => false,
+    'next_cursor' => null
+]
+```
+
+### 📈 Get Analytics Data
+
+Query time-bucketed metrics for request counts, success/error rates, and latency percentiles. Essential for monitoring API performance.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+// Get analytics for an endpoint (endpoint_id is required)
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->get();
+
+// Access metrics
+$totalRequests = $analytics->getTotalRequests();
+$successRate = $analytics->getSuccessRate(); // Returns percentage (e.g., 95.0)
+```
+
+#### Include Specific Metrics
+
+```php
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->withRequestCount()      // Total requests
+    ->withSuccessCount()      // Successful responses (2xx)
+    ->withErrorCount()        // Server errors (5xx)
+    ->withUserErrorCount()    // User errors (4xx)
+    ->withP50Duration()       // 50th percentile latency
+    ->withP90Duration()       // 90th percentile latency
+    ->get();
+```
+
+#### Convenience Methods
+
+```php
+// Include all error metrics
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->withAllErrors()          // user_error_count + error_count
+    ->get();
+
+// Include all latency metrics
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->withAllLatencyMetrics()  // P50, P75, P90 for both prepare and execution
+    ->get();
+
+// Include everything
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->withAllMetrics()
+    ->get();
+```
+
+#### Filter by Date Range and Timeframe
+
+```php
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoint('fal-ai/flux/dev')
+    ->between('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z')
+    ->timeframe('hour')  // Aggregate by: 'minute', 'hour', 'day', 'week', 'month'
+    ->timezone('UTC')
+    ->get();
+```
+
+#### Calculate Success Rates
+
+```php
+$analytics = FalAi::platform()
+    ->analytics()
+    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
+    ->withSuccessCount()
+    ->get();
+
+// Overall success rate
+$overallRate = $analytics->getSuccessRate(); // e.g., 97.5
+
+// Per-endpoint success rate
+$devRate = $analytics->getSuccessRateFor('fal-ai/flux/dev');
+$schnellRate = $analytics->getSuccessRateFor('fal-ai/flux/schnell');
+
+// Get totals
+$totalErrors = $analytics->getTotalErrors();
+$totalUserErrors = $analytics->getTotalUserErrors();
+```
+
+**Example Response:**
+
+```php
+[
+    'time_series' => [
+        [
+            'bucket' => '2025-01-15T12:00:00-05:00',
+            'results' => [
+                [
+                    'endpoint_id' => 'fal-ai/flux/dev',
+                    'request_count' => 1500,
+                    'success_count' => 1450,
+                    'user_error_count' => 40,
+                    'error_count' => 10,
+                    'p50_duration' => 2.5,
+                    'p90_duration' => 4.8
+                ]
+            ]
+        ]
+    ],
+    'has_more' => false,
+    'next_cursor' => null
+]
 ```
 
 ## 🔗 Fluent API Methods

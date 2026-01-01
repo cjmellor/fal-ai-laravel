@@ -36,7 +36,7 @@ describe('StreamRequest', function (): void {
 
         $request = new StreamRequest(null, ['prompt' => 'test']);
 
-        expect(fn () => $request->resolveEndpoint())
+        expect(fn (): string => $request->resolveEndpoint())
             ->toThrow(InvalidModelException::class, 'Model ID cannot be empty');
     });
 

@@ -41,6 +41,14 @@ class FalAi
     }
 
     /**
+     * Access Platform APIs (pricing, usage, analytics, etc.)
+     */
+    public function platform(): Platform
+    {
+        return new Platform;
+    }
+
+    /**
      * Run a request to the Fal.ai API
      *
      * @param  array  $data  The data to submit to the model

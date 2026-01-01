@@ -203,3 +203,83 @@ Route::post(uri: '/test-stream', action: function (Request $request) {
         ], status: 500);
     }
 });
+
+// Platform API - Pricing
+Route::get('/platform/pricing', function (Request $request) {
+    try {
+        $endpointIds = $request->input('endpoint_ids', ['fal-ai/flux/dev', 'fal-ai/flux/schnell']);
+
+        $pricing = FalAi::platform()->pricing()
+            ->forEndpoints($endpointIds)
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'prices' => $pricing->prices,
+            'has_more' => $pricing->hasMore,
+            'next_cursor' => $pricing->nextCursor,
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});
+
+// Platform API - Estimate Cost (Historical)
+Route::post('/platform/estimate-cost/historical', function (Request $request) {
+    try {
+        $builder = FalAi::platform()->estimateCost()
+            ->historicalApiPrice();
+
+        // Add endpoints from request
+        foreach ($request->input('endpoints', []) as $endpointId => $quantity) {
+            $builder->endpoint($endpointId, callQuantity: $quantity);
+        }
+
+        $estimate = $builder->estimate();
+
+        return response()->json([
+            'success' => $estimate->successful(),
+            'estimate_type' => $estimate->estimateType,
+            'total_cost' => $estimate->totalCost,
+            'currency' => $estimate->currency,
+            'status_code' => $estimate->status(),
+            'raw_response' => $estimate->json(), // Debug: see full response
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(), // Debug: see stack trace
+        ], 500);
+    }
+});
+
+// Platform API - Estimate Cost (Unit Price)
+Route::post('/platform/estimate-cost/unit', function (Request $request) {
+    try {
+        $builder = FalAi::platform()->estimateCost()
+            ->unitPrice();
+
+        // Add endpoints from request
+        foreach ($request->input('endpoints', []) as $endpointId => $quantity) {
+            $builder->endpoint($endpointId, unitQuantity: $quantity);
+        }
+
+        $estimate = $builder->estimate();
+
+        return response()->json([
+            'success' => true,
+            'estimate_type' => $estimate->estimateType,
+            'total_cost' => $estimate->totalCost,
+            'currency' => $estimate->currency,
+        ]);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+});

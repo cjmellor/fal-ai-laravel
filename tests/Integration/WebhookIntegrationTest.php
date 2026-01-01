@@ -41,8 +41,7 @@ it('completes webhook flow', function (): void {
     // Verify the response
     expect($response)
         ->toBeInstanceOf(Cjmellor\FalAi\Responses\SubmitResponse::class)
-        ->and($response->request_id)->toBe('test-request-id-123')
-        ->and($response->status)->toBe('IN_QUEUE');
+        ->and($response->requestId)->toBe('test-request-id-123');
 });
 
 it('validates webhook url in integration', function (): void {
@@ -78,7 +77,7 @@ it('automatically uses queue endpoint', function (): void {
     // The mock ensures the request was made correctly
     expect($response)
         ->toBeInstanceOf(Cjmellor\FalAi\Responses\SubmitResponse::class)
-        ->and($response->request_id)->toBe('test-123');
+        ->and($response->requestId)->toBe('test-123');
 });
 
 it('allows webhook url to be changed', function (): void {
@@ -117,7 +116,7 @@ it('works with other fluent methods', function (): void {
     // The mock ensures the request was made correctly
     expect($response)
         ->toBeInstanceOf(Cjmellor\FalAi\Responses\SubmitResponse::class)
-        ->and($response->request_id)->toBe('test-123');
+        ->and($response->requestId)->toBe('test-123');
 });
 
 covers(FalAi::class);

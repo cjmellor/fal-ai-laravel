@@ -6,34 +6,27 @@ namespace Cjmellor\FalAi\Responses;
 
 use Saloon\Http\Response;
 
-class SubmitResponse
+class EstimateCostResponse
 {
     /**
-     * Get the request ID
+     * Get the estimate type used
      */
-    public string $requestId {
-        get => $this->data['request_id'] ?? '';
+    public string $estimateType {
+        get => $this->data['estimate_type'] ?? '';
     }
 
     /**
-     * Get the response URL
+     * Get the total estimated cost
      */
-    public string $responseUrl {
-        get => $this->data['response_url'] ?? '';
+    public float $totalCost {
+        get => (float) ($this->data['total_cost'] ?? 0.0);
     }
 
     /**
-     * Get the status URL
+     * Get the currency code (e.g., "USD")
      */
-    public string $statusUrl {
-        get => $this->data['status_url'] ?? '';
-    }
-
-    /**
-     * Get the cancel URL
-     */
-    public string $cancelUrl {
-        get => $this->data['cancel_url'] ?? '';
+    public string $currency {
+        get => $this->data['currency'] ?? 'USD';
     }
 
     private array $data;

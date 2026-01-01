@@ -8,20 +8,13 @@ use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
 use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
 
-class FalConnector extends Connector
+class PlatformConnector extends Connector
 {
     use AlwaysThrowOnErrors;
 
-    private ?string $baseUrlOverride = null;
-
-    public function __construct(?string $baseUrlOverride = null)
-    {
-        $this->baseUrlOverride = $baseUrlOverride;
-    }
-
     public function resolveBaseUrl(): string
     {
-        return $this->baseUrlOverride ?? config()->string(key: 'fal-ai.base_url');
+        return config()->string(key: 'fal-ai.platform_base_url');
     }
 
     protected function defaultAuth(): TokenAuthenticator
