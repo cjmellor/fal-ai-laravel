@@ -6,9 +6,12 @@ namespace Cjmellor\FalAi\Connectors;
 
 use Saloon\Http\Auth\TokenAuthenticator;
 use Saloon\Http\Connector;
+use Saloon\Traits\Plugins\AlwaysThrowOnErrors;
 
 class FalConnector extends Connector
 {
+    use AlwaysThrowOnErrors;
+
     private ?string $baseUrlOverride = null;
 
     public function __construct(?string $baseUrlOverride = null)
@@ -28,14 +31,4 @@ class FalConnector extends Connector
             prefix: 'Key',
         );
     }
-
-    /**
-     * The `HasJsonBody` trait automatically sets the Content-Type header to application/json.
-     */
-    // public function defaultHeaders(): array
-    // {
-    //     return [
-    //         'Content-Type' => 'application/json',
-    //     ];
-    // }
 }

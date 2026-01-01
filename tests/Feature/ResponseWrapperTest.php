@@ -49,13 +49,13 @@ describe('SubmitResponse Features', function (): void {
 
         expect($response)
             ->toBeInstanceOf(SubmitResponse::class)
-            ->request_id->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
-            ->status_url->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/status')
-            ->cancel_url->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/cancel')
-            ->response_url->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
+            ->requestId->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
+            ->statusUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/status')
+            ->cancelUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/cancel')
+            ->responseUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
     });
 
-    it('provides convenience methods for common operations', function (): void {
+    it('provides property hook access for common operations', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
@@ -63,10 +63,10 @@ describe('SubmitResponse Features', function (): void {
         $response = $this->falAi->run(['prompt' => 'a cat'], 'fal-ai/flux-1');
 
         expect($response)
-            ->getRequestId()->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
-            ->getStatusUrl()->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/status')
-            ->getCancelUrl()->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/cancel')
-            ->getResponseUrl()->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
+            ->requestId->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
+            ->statusUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/status')
+            ->cancelUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9/cancel')
+            ->responseUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
     });
 
     it('maintains backward compatibility with json() method', function (): void {
@@ -111,13 +111,13 @@ describe('StatusResponse Features', function (): void {
         expect($response)
             ->toBeInstanceOf(StatusResponse::class)
             ->status->toBe($status)
-            ->queue_position->toBe($queuePosition)
+            ->queuePosition->toBe($queuePosition)
             ->isInQueue()->toBe($expectedMethods['isInQueue'])
             ->isInProgress()->toBe($expectedMethods['isInProgress'])
             ->isCompleted()->toBe($expectedMethods['isCompleted']);
     })->with('status_responses');
 
-    it('provides direct property access and convenience methods', function (): void {
+    it('provides direct property access via property hooks', function (): void {
         $statusData = [
             'status' => 'COMPLETED',
             'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
@@ -136,10 +136,10 @@ describe('StatusResponse Features', function (): void {
         $response = $this->falAi->status('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', false, 'fal-ai/flux-1');
 
         expect($response)
-            ->getQueuePosition()->toBeNull()
-            ->getResponseUrl()->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
-            ->getMetrics()->toBe(['inference_time' => 0.3668229579925537])
-            ->getLogs()->toBeNull();
+            ->queuePosition->toBeNull()
+            ->responseUrl->toBe('https://queue.fal.run/fal-ai/flux-1/requests/8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
+            ->metrics->toBe(['inference_time' => 0.3668229579925537])
+            ->logs->toBeNull();
     });
 });
 
@@ -298,8 +298,7 @@ describe('Fluent API Integration', function (): void {
 
         expect($response)
             ->toBeInstanceOf(SubmitResponse::class)
-            ->request_id->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
-            ->getRequestId()->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
+            ->requestId->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9');
     });
 });
 

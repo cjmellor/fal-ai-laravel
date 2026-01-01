@@ -8,43 +8,46 @@ use Saloon\Http\Response;
 
 class ResultResponse
 {
+    /**
+     * Get all images from the response
+     */
     public array $images {
-        get => $this->images();
+        get => $this->data['images'] ?? [];
     }
 
     /**
      * Get the first image array
      */
     public ?array $firstImage {
-        get => $this->images()[0] ?? null;
+        get => $this->images[0] ?? null;
     }
 
     /**
      * Get the first image URL
      */
     public ?string $firstImageUrl {
-        get => $this->images()[0]['url'] ?? null;
+        get => $this->images[0]['url'] ?? null;
     }
 
     /**
      * Get the primary image (alias for firstImage)
      */
     public ?array $primaryImage {
-        get => $this->images()[0] ?? null;
+        get => $this->images[0] ?? null;
     }
 
     /**
      * Get the main image URL (alias for firstImageUrl)
      */
     public ?string $mainImageUrl {
-        get => $this->images()[0]['url'] ?? null;
+        get => $this->images[0]['url'] ?? null;
     }
 
     /**
      * Get image URL by index (defaults to first image)
      */
     public ?string $imageUrl {
-        get => $this->images()[0]['url'] ?? null;
+        get => $this->images[0]['url'] ?? null;
     }
 
     /**
@@ -93,35 +96,35 @@ class ResultResponse
      * Get the width of the first image
      */
     public ?int $width {
-        get => $this->images()[0]['width'] ?? null;
+        get => $this->images[0]['width'] ?? null;
     }
 
     /**
      * Get the height of the first image
      */
     public ?int $height {
-        get => $this->images()[0]['height'] ?? null;
+        get => $this->images[0]['height'] ?? null;
     }
 
     /**
      * Get the content type of the first image
      */
     public ?string $contentType {
-        get => $this->images()[0]['content_type'] ?? null;
+        get => $this->images[0]['content_type'] ?? null;
     }
 
     /**
      * Get the file name of the first image
      */
     public ?string $fileName {
-        get => $this->images()[0]['file_name'] ?? null;
+        get => $this->images[0]['file_name'] ?? null;
     }
 
     /**
      * Get the file size of the first image
      */
     public ?int $fileSize {
-        get => $this->images()[0]['file_size'] ?? null;
+        get => $this->images[0]['file_size'] ?? null;
     }
 
     private array $data;
@@ -133,41 +136,43 @@ class ResultResponse
         $this->data = $data;
     }
 
-    // Backward compatibility methods
+    /**
+     * Get the raw JSON response
+     */
     public function json(): array
     {
         return $this->response->json();
     }
 
+    /**
+     * Get the HTTP status code
+     */
     public function status(): int
     {
         return $this->response->status();
     }
 
+    /**
+     * Check if the request was successful
+     */
     public function successful(): bool
     {
         return $this->response->successful();
     }
 
+    /**
+     * Check if the request failed
+     */
     public function failed(): bool
     {
         return $this->response->failed();
     }
 
+    /**
+     * Get the underlying Saloon response
+     */
     public function getResponse(): Response
     {
         return $this->response;
-    }
-
-    /**
-     * Get all images from the response
-     */
-    // public function getImages(): array
-    // {
-    //     return $this->images ?? [];
-    // }
-    private function images(): array
-    {
-        return $this->data['images'] ?? [];
     }
 }

@@ -8,72 +8,78 @@ use Saloon\Http\Response;
 
 class SubmitResponse
 {
-    public function __construct(
-        private Response $response,
-        private array $data
-    ) {}
-
-    /**
-     * Magic property access for response data
-     */
-    public function __get(string $name): mixed
-    {
-        return $this->data[$name] ?? null;
-    }
-
     /**
      * Get the request ID
      */
-    public function getRequestId(): string
-    {
-        return $this->request_id;
+    public string $requestId {
+        get => $this->data['request_id'] ?? '';
     }
 
     /**
      * Get the response URL
      */
-    public function getResponseUrl(): string
-    {
-        return $this->response_url;
+    public string $responseUrl {
+        get => $this->data['response_url'] ?? '';
     }
 
     /**
      * Get the status URL
      */
-    public function getStatusUrl(): string
-    {
-        return $this->status_url;
+    public string $statusUrl {
+        get => $this->data['status_url'] ?? '';
     }
 
     /**
      * Get the cancel URL
      */
-    public function getCancelUrl(): string
-    {
-        return $this->cancel_url;
+    public string $cancelUrl {
+        get => $this->data['cancel_url'] ?? '';
     }
 
-    // Backward compatibility methods
+    private array $data;
+
+    public function __construct(
+        private Response $response,
+        array $data
+    ) {
+        $this->data = $data;
+    }
+
+    /**
+     * Get the raw JSON response
+     */
     public function json(): array
     {
         return $this->response->json();
     }
 
+    /**
+     * Get the HTTP status code
+     */
     public function status(): int
     {
         return $this->response->status();
     }
 
+    /**
+     * Check if the request was successful
+     */
     public function successful(): bool
     {
         return $this->response->successful();
     }
 
+    /**
+     * Check if the request failed
+     */
     public function failed(): bool
     {
         return $this->response->failed();
     }
 
+    /**
+     * Get the underlying Saloon response
+     */
     public function getResponse(): Response
     {
         return $this->response;

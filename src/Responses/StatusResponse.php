@@ -8,17 +8,55 @@ use Saloon\Http\Response;
 
 class StatusResponse
 {
-    public function __construct(
-        private Response $response,
-        private array $data
-    ) {}
+    /**
+     * Get the request status
+     */
+    public string $status {
+        get => $this->data['status'] ?? '';
+    }
 
     /**
-     * Magic property access for response data
+     * Get queue position if available
      */
-    public function __get(string $name): mixed
-    {
-        return $this->data[$name] ?? null;
+    public ?int $queuePosition {
+        get => $this->data['queue_position'] ?? null;
+    }
+
+    /**
+     * Get response URL if available
+     */
+    public ?string $responseUrl {
+        get => $this->data['response_url'] ?? null;
+    }
+
+    /**
+     * Get logs if available
+     */
+    public ?array $logs {
+        get => $this->data['logs'] ?? null;
+    }
+
+    /**
+     * Get metrics if available
+     */
+    public ?array $metrics {
+        get => $this->data['metrics'] ?? null;
+    }
+
+    /**
+     * Get timings if available
+     */
+    public ?array $timings {
+        get => $this->data['timings'] ?? null;
+    }
+
+    private array $data;
+
+    public function __construct(
+        private Response $response,
+        array $data
+    ) {
+        $this->data = $data;
     }
 
     /**
@@ -46,66 +84,40 @@ class StatusResponse
     }
 
     /**
-     * Get queue position if available
+     * Get the raw JSON response
      */
-    public function getQueuePosition(): ?int
-    {
-        return $this->queue_position;
-    }
-
-    /**
-     * Get response URL if available
-     */
-    public function getResponseUrl(): ?string
-    {
-        return $this->response_url;
-    }
-
-    /**
-     * Get logs if available
-     */
-    public function getLogs(): ?array
-    {
-        return $this->logs;
-    }
-
-    /**
-     * Get metrics if available
-     */
-    public function getMetrics(): ?array
-    {
-        return $this->metrics;
-    }
-
-    /**
-     * Get timings if available
-     */
-    public function getTimings(): ?array
-    {
-        return $this->timings;
-    }
-
-    // Backward compatibility methods
     public function json(): array
     {
         return $this->response->json();
     }
 
+    /**
+     * Get the HTTP status code
+     */
     public function status(): int
     {
         return $this->response->status();
     }
 
+    /**
+     * Check if the request was successful
+     */
     public function successful(): bool
     {
         return $this->response->successful();
     }
 
+    /**
+     * Check if the request failed
+     */
     public function failed(): bool
     {
         return $this->response->failed();
     }
 
+    /**
+     * Get the underlying Saloon response
+     */
     public function getResponse(): Response
     {
         return $this->response;
