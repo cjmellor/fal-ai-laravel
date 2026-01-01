@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"time_series\":[{\"bucket\":\"2025-01-15T00:00:00Z\",\"results\":[{\"endpoint_id\":\"fal-ai/flux/dev\",\"unit\":\"image\",\"quantity\":10,\"unit_price\":0.025,\"cost\":0.25,\"currency\":\"USD\"},{\"endpoint_id\":\"fal-ai/flux/schnell\",\"unit\":\"image\",\"quantity\":20,\"unit_price\":0.003,\"cost\":0.06,\"currency\":\"USD\"}]}],\"next_cursor\":null,\"has_more\":false}"
+}

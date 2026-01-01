@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "43b56ccd7af99e835801e0e2476e2afe",
+    "content-hash": "31381f1782c5758b35a4cdccd7ab6179",
     "packages": [
         {
             "name": "brick/math",
@@ -9172,6 +9172,74 @@
                 }
             ],
             "time": "2025-08-15T14:41:36+00:00"
+        },
+        {
+            "name": "saloonphp/laravel-plugin",
+            "version": "v3.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/saloonphp/laravel-plugin.git",
+                "reference": "6338fcb6c4125d212da9a96f7bd7f447a1a7dcd8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/saloonphp/laravel-plugin/zipball/6338fcb6c4125d212da9a96f7bd7f447a1a7dcd8",
+                "reference": "6338fcb6c4125d212da9a96f7bd7f447a1a7dcd8",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/console": "^10.0 || ^11.0 || ^12.0",
+                "illuminate/support": "^10.0 || ^11.0 || ^12.0",
+                "php": "^8.1",
+                "saloonphp/saloon": "^3.5",
+                "symfony/finder": "^6.4 || ^7.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.48",
+                "orchestra/testbench": "^8.21 || ^9.0 || ^10.0",
+                "pestphp/pest": "^2.32 || ^3.7",
+                "phpstan/phpstan": "^1.10.56 || ^2.1"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Saloon": "Saloon\\Laravel\\Facades\\Saloon"
+                    },
+                    "providers": [
+                        "Saloon\\Laravel\\SaloonServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Saloon\\Laravel\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Sam Carré",
+                    "email": "29132017+Sammyjo20@users.noreply.github.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "The official Laravel plugin for Saloon",
+            "homepage": "https://github.com/saloonphp/laravel-plugin",
+            "keywords": [
+                "api",
+                "api-integrations",
+                "saloon",
+                "saloonphp",
+                "sdk"
+            ],
+            "support": {
+                "source": "https://github.com/saloonphp/laravel-plugin/tree/v3.6.0"
+            },
+            "time": "2025-06-21T13:03:10+00:00"
         },
         {
             "name": "sebastian/cli-parser",

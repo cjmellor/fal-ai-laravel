@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"estimate_type\":\"unit_price\",\"total_cost\":2.50,\"currency\":\"USD\"}"
+}

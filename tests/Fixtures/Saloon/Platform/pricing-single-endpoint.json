@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"prices\":[{\"endpoint_id\":\"fal-ai/flux/dev\",\"unit_price\":0.025,\"unit\":\"image\",\"currency\":\"USD\"}],\"next_cursor\":null,\"has_more\":false}"
+}

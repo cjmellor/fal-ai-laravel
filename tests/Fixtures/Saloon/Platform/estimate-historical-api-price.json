@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"estimate_type\":\"historical_api_price\",\"total_cost\":3.75,\"currency\":\"USD\"}"
+}

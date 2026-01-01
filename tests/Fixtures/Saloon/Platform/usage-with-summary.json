@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"time_series\":[],\"summary\":{\"total_cost\":5.5,\"total_quantity\":220},\"next_cursor\":null,\"has_more\":false}"
+}

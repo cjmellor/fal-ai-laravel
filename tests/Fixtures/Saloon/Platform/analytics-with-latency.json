@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"time_series\":[{\"bucket\":\"2025-01-15T12:00:00Z\",\"results\":[{\"endpoint_id\":\"fal-ai/flux/dev\",\"request_count\":100,\"p50_duration\":2.5,\"p75_duration\":3.2,\"p90_duration\":4.8}]}],\"next_cursor\":null,\"has_more\":false}"
+}

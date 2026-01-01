@@ -21,6 +21,7 @@ class TestCase extends Orchestra
     {
         return [
             FalAiServiceProvider::class,
+            \Saloon\Laravel\SaloonServiceProvider::class,
         ];
     }
 
