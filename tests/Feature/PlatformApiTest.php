@@ -149,7 +149,7 @@ describe('Platform Estimate Cost API', function (): void {
     it('throws exception when no endpoints provided', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\EstimateCostResponse => $falAi->platform()->estimateCost()
+        expect(fn (): Cjmellor\FalAi\Responses\EstimateCostResponse => $falAi->platform()->estimateCost()
             ->historicalApiPrice()
             ->estimate()
         )->toThrow(InvalidArgumentException::class, 'At least one endpoint must be provided');
@@ -158,7 +158,7 @@ describe('Platform Estimate Cost API', function (): void {
     it('throws exception when endpoint has no quantity', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Support\EstimateCostRequest => $falAi->platform()->estimateCost()
+        expect(fn (): Cjmellor\FalAi\Support\EstimateCostRequest => $falAi->platform()->estimateCost()
             ->historicalApiPrice()
             ->endpoint('fal-ai/flux/dev')
         )->toThrow(InvalidArgumentException::class, 'Either callQuantity or unitQuantity must be provided');
@@ -181,7 +181,7 @@ describe('Platform Pricing Request Builder', function (): void {
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): \Cjmellor\FalAi\Support\PricingRequest => $falAi->platform()->pricing()
+        expect(fn (): Cjmellor\FalAi\Support\PricingRequest => $falAi->platform()->pricing()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
@@ -197,7 +197,7 @@ describe('Platform Pricing Request Builder', function (): void {
         }
 
         // 51st should throw
-        expect(fn (): \Cjmellor\FalAi\Support\PricingRequest => $builder->forEndpoint('fal-ai/model-51'))
+        expect(fn (): Cjmellor\FalAi\Support\PricingRequest => $builder->forEndpoint('fal-ai/model-51'))
             ->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
 
@@ -347,7 +347,7 @@ describe('Platform Usage Request Builder', function (): void {
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): \Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
@@ -355,7 +355,7 @@ describe('Platform Usage Request Builder', function (): void {
     it('throws exception for invalid timeframe', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
             ->timeframe('invalid')
         )->toThrow(InvalidArgumentException::class, 'Invalid timeframe');
     });
@@ -363,7 +363,7 @@ describe('Platform Usage Request Builder', function (): void {
     it('throws exception for limit less than 1', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
             ->limit(0)
         )->toThrow(InvalidArgumentException::class, 'Limit must be at least 1');
     });
@@ -509,7 +509,7 @@ describe('Platform Analytics Request Builder', function (): void {
     it('throws exception when no endpoint provided', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\AnalyticsResponse => $falAi->platform()->analytics()->get())
+        expect(fn (): Cjmellor\FalAi\Responses\AnalyticsResponse => $falAi->platform()->analytics()->get())
             ->toThrow(InvalidArgumentException::class, 'At least one endpoint ID is required for analytics');
     });
 
@@ -518,7 +518,7 @@ describe('Platform Analytics Request Builder', function (): void {
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): \Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
+        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
@@ -526,7 +526,7 @@ describe('Platform Analytics Request Builder', function (): void {
     it('throws exception for invalid timeframe', function (): void {
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
+        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
             ->timeframe('yearly')
         )->toThrow(InvalidArgumentException::class, 'Invalid timeframe');
     });

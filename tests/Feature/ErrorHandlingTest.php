@@ -36,7 +36,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
             ->toThrow(UnauthorizedException::class);
     });
 
@@ -47,7 +47,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
             ->toThrow(ForbiddenException::class);
     });
 
@@ -58,7 +58,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/non-existent-model'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/non-existent-model'))
             ->toThrow(NotFoundException::class);
     });
 
@@ -69,7 +69,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['invalid' => 'data'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['invalid' => 'data'], 'fal-ai/flux/dev'))
             ->toThrow(UnprocessableEntityException::class);
     });
 
@@ -80,7 +80,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
             ->toThrow(TooManyRequestsException::class);
     });
 
@@ -91,7 +91,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
             ->toThrow(InternalServerErrorException::class);
     });
 
@@ -102,7 +102,7 @@ describe('Model API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
             ->toThrow(ServiceUnavailableException::class);
     });
 });
@@ -115,7 +115,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(UnauthorizedException::class);
     });
 
@@ -126,7 +126,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(ForbiddenException::class);
     });
 
@@ -137,7 +137,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/non-existent')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/non-existent')->get())
             ->toThrow(NotFoundException::class);
     });
 
@@ -148,7 +148,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(TooManyRequestsException::class);
     });
 
@@ -159,7 +159,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(InternalServerErrorException::class);
     });
 
@@ -170,7 +170,7 @@ describe('Platform API Error Handling', function (): void {
 
         $falAi = new FalAi();
 
-        expect(fn (): \Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(ServiceUnavailableException::class);
     });
 });
