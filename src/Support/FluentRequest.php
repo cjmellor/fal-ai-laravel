@@ -17,15 +17,24 @@ class FluentRequest implements FluentRequestInterface
 {
     use Conditionable;
 
-    private array $data = [];
+    /**
+     * Get the current data array
+     */
+    public private(set) array $data = [];
+
+    /**
+     * Get the current base URL override
+     */
+    public private(set) ?string $baseUrlOverride = null;
+
+    /**
+     * Get the current webhook URL
+     */
+    public private(set) ?string $webhookUrl = null;
 
     private ?string $modelId;
 
     private FalAi $falAi;
-
-    private ?string $baseUrlOverride = null;
-
-    private ?string $webhookUrl = null;
 
     public function __construct(FalAi $falAi, ?string $modelId)
     {
@@ -143,14 +152,6 @@ class FluentRequest implements FluentRequestInterface
     }
 
     /**
-     * Get the current data array
-     */
-    public function getData(): array
-    {
-        return $this->data;
-    }
-
-    /**
      * Get all data as an array
      */
     public function toArray(): array
@@ -185,21 +186,5 @@ class FluentRequest implements FluentRequestInterface
         $clone->data = array_merge($this->data, $data);
 
         return $clone;
-    }
-
-    /**
-     * Get the current base URL override
-     */
-    public function getBaseUrlOverride(): ?string
-    {
-        return $this->baseUrlOverride;
-    }
-
-    /**
-     * Get the current webhook URL
-     */
-    public function getWebhookUrl(): ?string
-    {
-        return $this->webhookUrl;
     }
 }

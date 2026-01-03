@@ -18,12 +18,19 @@ class EstimateCostRequest
 
     private const ESTIMATE_TYPE_UNIT = 'unit_price';
 
+    /**
+     * Get the current estimate type
+     */
+    public private(set) string $estimateType = self::ESTIMATE_TYPE_HISTORICAL;
+
+    /**
+     * Get the current endpoints
+     *
+     * @var array<string, array{call_quantity?: int, unit_quantity?: int}>
+     */
+    public private(set) array $configuredEndpoints = [];
+
     private Platform $platform;
-
-    private string $estimateType = self::ESTIMATE_TYPE_HISTORICAL;
-
-    /** @var array<string, array{call_quantity?: int, unit_quantity?: int}> */
-    private array $endpoints = [];
 
     public function __construct(Platform $platform)
     {
@@ -73,7 +80,7 @@ class EstimateCostRequest
             $quantity['unit_quantity'] = $unitQuantity;
         }
 
-        $this->endpoints[$endpointId] = $quantity;
+        $this->configuredEndpoints[$endpointId] = $quantity;
 
         return $this;
     }
@@ -85,7 +92,7 @@ class EstimateCostRequest
      */
     public function endpoints(array $endpoints): self
     {
-        $this->endpoints = array_merge($this->endpoints, $endpoints);
+        $this->configuredEndpoints = array_merge($this->configuredEndpoints, $endpoints);
 
         return $this;
     }
@@ -95,31 +102,13 @@ class EstimateCostRequest
      */
     public function estimate(): EstimateCostResponse
     {
-        if ($this->endpoints === []) {
+        if ($this->configuredEndpoints === []) {
             throw new InvalidArgumentException('At least one endpoint must be provided');
         }
 
-        $request = new SaloonEstimateCostRequest($this->estimateType, $this->endpoints);
-        $response = $this->platform->getConnector()->send($request);
+        $request = new SaloonEstimateCostRequest($this->estimateType, $this->configuredEndpoints);
+        $response = $this->platform->connector->send($request);
 
         return new EstimateCostResponse($response, $response->json());
-    }
-
-    /**
-     * Get the current estimate type
-     */
-    public function getEstimateType(): string
-    {
-        return $this->estimateType;
-    }
-
-    /**
-     * Get the current endpoints
-     *
-     * @return array<string, array{call_quantity?: int, unit_quantity?: int}>
-     */
-    public function getEndpoints(): array
-    {
-        return $this->endpoints;
     }
 }

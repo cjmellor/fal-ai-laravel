@@ -169,7 +169,7 @@ describe('Platform Estimate Cost API', function (): void {
 
         $builder = $falAi->platform()->estimateCost();
 
-        expect($builder->getEstimateType())->toBe('historical_api_price');
+        expect($builder->estimateType)->toBe('historical_api_price');
     });
 
 });
@@ -208,7 +208,7 @@ describe('Platform Pricing Request Builder', function (): void {
             ->forEndpoint('fal-ai/flux/dev')
             ->forEndpoint('fal-ai/flux/schnell');
 
-        expect($builder->getEndpointIds())->toBe([
+        expect($builder->endpointIds)->toBe([
             'fal-ai/flux/dev',
             'fal-ai/flux/schnell',
         ]);
@@ -225,7 +225,7 @@ describe('Platform Estimate Cost Request Builder', function (): void {
             ->endpoint('fal-ai/flux/dev', callQuantity: 100)
             ->endpoint('fal-ai/flux/schnell', unitQuantity: 50);
 
-        expect($builder->getEndpoints())->toBe([
+        expect($builder->configuredEndpoints)->toBe([
             'fal-ai/flux/dev' => ['call_quantity' => 100],
             'fal-ai/flux/schnell' => ['unit_quantity' => 50],
         ]);
@@ -236,13 +236,13 @@ describe('Platform Estimate Cost Request Builder', function (): void {
 
         $builder = $falAi->platform()->estimateCost()
             ->historicalApiPrice();
-        expect($builder->getEstimateType())->toBe('historical_api_price');
+        expect($builder->estimateType)->toBe('historical_api_price');
 
         $builder->unitPrice();
-        expect($builder->getEstimateType())->toBe('unit_price');
+        expect($builder->estimateType)->toBe('unit_price');
 
         $builder->historicalApiPrice();
-        expect($builder->getEstimateType())->toBe('historical_api_price');
+        expect($builder->estimateType)->toBe('historical_api_price');
     });
 
 });
@@ -376,9 +376,9 @@ describe('Platform Usage Request Builder', function (): void {
             ->withSummary()
             ->withAuthMethod();
 
-        expect($builder->getExpand())->toContain('time_series')
-            ->and($builder->getExpand())->toContain('summary')
-            ->and($builder->getExpand())->toContain('auth_method');
+        expect($builder->expand)->toContain('time_series')
+            ->and($builder->expand)->toContain('summary')
+            ->and($builder->expand)->toContain('auth_method');
     });
 
     it('can set date range with from and to', function (): void {
@@ -541,7 +541,7 @@ describe('Platform Analytics Request Builder', function (): void {
             ->withAllErrors()
             ->withP90Duration();
 
-        $expand = $builder->getExpand();
+        $expand = $builder->expand;
 
         expect($expand)->toContain('request_count')
             ->and($expand)->toContain('success_count')
@@ -557,7 +557,7 @@ describe('Platform Analytics Request Builder', function (): void {
             ->forEndpoint('fal-ai/flux/dev')
             ->withAllMetrics();
 
-        $expand = $builder->getExpand();
+        $expand = $builder->expand;
 
         expect($expand)->toContain('time_series')
             ->and($expand)->toContain('request_count')

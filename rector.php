@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Rector\Config\RectorConfig;
+use Rector\TypeDeclaration\Rector\ArrowFunction\AddArrowFunctionReturnTypeRector;
 use RectorLaravel\Set\LaravelLevelSetList;
 
 return RectorConfig::configure()
@@ -21,5 +22,10 @@ return RectorConfig::configure()
     )
     ->withSets([
         LaravelLevelSetList::UP_TO_LARAVEL_120,
+    ])
+    ->withSkip([
+        // Rector incorrectly infers Pest\Mixins\Expectation instead of Pest\Expectation
+        AddArrowFunctionReturnTypeRector::class => [
+            __DIR__.'/tests',
+        ],
     ]);
-// ->withPhpSets(php84: true)

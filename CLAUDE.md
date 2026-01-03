@@ -48,62 +48,62 @@ composer serve
 
 ## Architecture
 
+### Two API Systems
+
+The package provides two distinct API systems:
+
+1. **Model APIs** - Execute AI models (image generation, etc.) via `FalAi::model()`
+2. **Platform APIs** - Query pricing, usage, analytics via `FalAi::platform()`
+
+Each has its own connector, endpoint, and fluent builder pattern.
+
 ### Core Components
 
-- **`FalAi`** (`src/FalAi.php`) - Main entry point. Orchestrates model requests and Platform API access. Methods: `model()`, `platform()`, `run()`, `status()`, `result()`, `stream()`, `cancel()`.
+- **`FalAi`** (`src/FalAi.php`) - Main entry point. Methods: `model()`, `platform()`, `run()`, `status()`, `result()`, `stream()`, `cancel()`.
 
-- **`Platform`** (`src/Platform.php`) - Platform API gateway. Provides fluent builders for pricing, cost estimation, usage data, and analytics. Separate from model execution APIs.
+- **`Platform`** (`src/Platform.php`) - Platform API gateway. Returns fluent builders: `->pricing()`, `->estimateCost()`, `->usage()`, `->analytics()`.
 
-- **`FluentRequest`** (`src/Support/FluentRequest.php`) - Chainable request builder for model requests. Dynamic `__call` converts camelCase to snake_case for API params (e.g., `->imageSize('landscape')` → `image_size: 'landscape'`). Supports both mutable and immutable patterns via `Immutable` suffix. Chainable methods include `->queue()`, `->sync()`, `->withWebhook()`, `->with()`, `->run()`, `->stream()`.
+- **`FluentRequest`** (`src/Support/FluentRequest.php`) - Chainable request builder for model requests. Dynamic `__call` converts camelCase to snake_case for API params (e.g., `->imageSize('landscape')` → `image_size: 'landscape'`). Supports immutable patterns via `Immutable` suffix.
 
-- **`FalConnector`** (`src/Connectors/FalConnector.php`) - Saloon HTTP connector for model APIs. Handles `Key` prefix authentication.
+- **`FalConnector`** (`src/Connectors/FalConnector.php`) - Saloon HTTP connector for model APIs. Uses `Key` prefix authentication.
 
-- **`PlatformConnector`** (`src/Connectors/PlatformConnector.php`) - Saloon HTTP connector for Platform APIs (pricing, usage, analytics). Separate authentication from model connector.
+- **`PlatformConnector`** (`src/Connectors/PlatformConnector.php`) - Saloon HTTP connector for Platform APIs.
 
-### Request/Response Flow (Model APIs)
+### Platform API Fluent Builders
 
-1. `FalAi::model($id)` returns a `FluentRequest`
-2. Chain methods (e.g., `->prompt()`, `->imageSize()`) to build request payload
-3. Call `->run()` (default queue mode), `->sync()`, or `->stream()`
-4. Returns typed response: `SubmitResponse`, `StatusResponse`, `ResultResponse`, or `StreamResponse`
-5. Response objects provide convenient accessors and helper methods
-
-### Request/Response Flow (Platform APIs)
-
-1. `FalAi::platform()` returns a `Platform` instance
-2. Call builder method: `->pricing()`, `->estimateCost()`, `->usage()`, or `->analytics()`
-3. Chain builder methods (e.g., `->forEndpoint()`, `->between()`)
-4. Call `->get()` to execute request
-5. Returns typed response: `PricingResponse`, `EstimateCostResponse`, `UsageResponse`, or `AnalyticsResponse`
+Located in `src/Support/`:
+- `PricingRequest` - Build pricing queries with `->forEndpoint()`, `->forEndpoints()`
+- `EstimateCostRequest` - Build cost estimates with `->historicalApiPrice()`, `->unitPrice()`, `->endpoint()`
+- `UsageRequest` - Build usage queries with `->between()`, `->timeframe()`, `->withSummary()`
+- `AnalyticsRequest` - Build analytics queries with `->withRequestCount()`, `->withAllMetrics()`
 
 ### Request Classes
 
 All extend Saloon's `Request` class. Located in `src/Requests/`:
-- `SubmitRequest` - Submit model request to Fal.ai
-- `FetchRequestStatusRequest` - Get status of queued request
-- `GetResultRequest` - Fetch result of completed request
-- `StreamRequest` - Stream real-time results using SSE
-- `CancelRequest` - Cancel queued request
+
+**Model API requests:**
+- `SubmitRequest`, `FetchRequestStatusRequest`, `GetResultRequest`, `StreamRequest`, `CancelRequest`
+
+**Platform API requests** (`src/Requests/Platform/`):
+- `GetPricingRequest`, `EstimateCostRequest`, `GetUsageRequest`, `GetAnalyticsRequest`
 
 ### Response Classes
 
-Extend Saloon's `Response` and provide convenient accessors. Located in `src/Responses/`:
-- `SubmitResponse` - Queued request response with `getRequestId()`, `getStatusUrl()`, `getCancelUrl()`, etc.
-- `StatusResponse` - Status with `isInProgress()`, `isCompleted()`, `getLogs()`, etc.
-- `ResultResponse` - Final result with `firstImageUrl`, `json()`, etc.
-- `StreamResponse` - Server-Sent Event stream response
-- `PricingResponse`, `UsageResponse`, `AnalyticsResponse`, `EstimateCostResponse` - Platform API responses with typed accessors
+**Saloon Response wrappers** (`src/Responses/`) - Extend Saloon's `Response` with typed accessors:
+- `SubmitResponse`, `StatusResponse`, `ResultResponse`, `StreamResponse`
+- `PricingResponse`, `UsageResponse`, `AnalyticsResponse`, `EstimateCostResponse`
+
+**Data Transfer Objects** (`src/Data/`) - Plain PHP classes for structured data:
+- `SubmitResponse`, `StatusResponse` - Typed DTOs with `fromArray()` factory methods
 
 ### Webhook System
 
 - **`VerifyFalWebhook`** middleware (`src/Middleware/VerifyFalWebhook.php`) - ED25519 signature verification using JWKS
-- **`WebhookVerifier`** service (`src/Services/WebhookVerifier.php`) - Verifies webhook signatures and timestamps to prevent replay attacks
+- **`WebhookVerifier`** service (`src/Services/WebhookVerifier.php`) - Verifies signatures and timestamps
 - Pre-configured route at `/webhooks/fal` (loaded via `routes/webhooks.php`)
-- JWKS caching for performance (configurable TTL in `config/fal-ai.php`)
 
 ### API Endpoints
 
-The package switches between endpoints based on mode (configurable):
 - Queue mode (default): `https://queue.fal.run`
 - Sync mode: `https://fal.run`
 - Streaming: `https://fal.run` with `/stream` suffix
@@ -118,7 +118,7 @@ Key options:
 - `base_url` - Queue API endpoint (default: `https://queue.fal.run`)
 - `platform_base_url` - Platform API endpoint (default: `https://api.fal.ai`)
 - `default_model` - Default model ID (optional)
-- `webhook` - Webhook verification settings (JWKS cache TTL, timestamp tolerance, verification timeout)
+- `webhook` - JWKS cache TTL, timestamp tolerance, verification timeout
 
 ## Namespace
 
@@ -128,17 +128,13 @@ All code uses `Cjmellor\FalAi` namespace. Auto-registered:
 
 ## Testing
 
-Uses Pest with Orchestra Testbench. Tests extend `Cjmellor\FalAi\Tests\TestCase` which auto-configures the service provider.
+Uses Pest with Orchestra Testbench. Tests extend `Cjmellor\FalAi\Tests\TestCase`.
 
 Test structure:
 - `tests/Unit/` - Unit tests for individual classes
 - `tests/Feature/` - Integration tests for workflows
 - `tests/Integration/` - Full end-to-end integration tests
 - `tests/Arch.php` - Architecture tests using pest-plugin-arch
-
-Test utilities:
-- `tests/TestCase.php` - Base test class with Testbench setup
-- `tests/Fixtures/` - Mock responses and test data
 
 ## Saloon HTTP Client
 

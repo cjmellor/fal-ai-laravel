@@ -14,8 +14,12 @@ class PricingRequest
 {
     use Conditionable;
 
-    /** @var array<string> */
-    private array $endpointIds = [];
+    /**
+     * Get the current endpoint IDs
+     *
+     * @var array<string>
+     */
+    public private(set) array $endpointIds = [];
 
     private Platform $platform;
 
@@ -60,18 +64,8 @@ class PricingRequest
     public function get(): PricingResponse
     {
         $request = new GetPricingRequest($this->endpointIds);
-        $response = $this->platform->getConnector()->send($request);
+        $response = $this->platform->connector->send($request);
 
         return new PricingResponse($response, $response->json());
-    }
-
-    /**
-     * Get the current endpoint IDs
-     *
-     * @return array<string>
-     */
-    public function getEndpointIds(): array
-    {
-        return $this->endpointIds;
     }
 }
