@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Requests\Platform\DeleteRequestPayloadsRequest;
 use Cjmellor\FalAi\Requests\Platform\EstimateCostRequest;
 use Cjmellor\FalAi\Requests\Platform\GetAnalyticsRequest;
 use Cjmellor\FalAi\Requests\Platform\GetPricingRequest;
@@ -566,6 +567,136 @@ describe('Platform Analytics Request Builder', function (): void {
             ->and($expand)->toContain('error_count')
             ->and($expand)->toContain('p50_duration')
             ->and($expand)->toContain('p90_duration');
+    });
+
+});
+
+describe('Platform Delete Request Payloads API', function (): void {
+
+    it('can delete payloads for a request ID', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        expect($response->successful())->toBeTrue()
+            ->and($response->cdnDeleteResults)->toHaveCount(2)
+            ->and($response->cdnDeleteResults[0]['link'])->toBe('https://v3.fal.media/files/abc123/output.png')
+            ->and($response->cdnDeleteResults[0]['exception'])->toBeNull();
+    });
+
+    it('can set idempotency key', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $builder = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->withIdempotencyKey('unique-key-123');
+
+        expect($builder->idempotencyKey)->toBe('unique-key-123');
+
+        $response = $builder->delete();
+
+        expect($response->successful())->toBeTrue();
+    });
+
+    it('returns hasErrors false for successful deletions', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        expect($response->hasErrors())->toBeFalse();
+    });
+
+    it('returns hasErrors true when exceptions present', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        expect($response->hasErrors())->toBeTrue();
+    });
+
+    it('filters successful deletions correctly', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        $successful = $response->getSuccessfulDeletions();
+
+        expect($successful)->toHaveCount(1)
+            ->and($successful[0]['link'])->toBe('https://v3.fal.media/files/abc123/output.png')
+            ->and($successful[0]['exception'])->toBeNull();
+    });
+
+    it('filters failed deletions correctly', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        $failed = $response->getFailedDeletions();
+
+        expect($failed)->toHaveCount(2)
+            ->and($failed[0]['exception'])->toBe('File not found')
+            ->and($failed[1]['exception'])->toBe('Access denied');
+    });
+
+    it('handles empty cdn delete results', function (): void {
+        Saloon::fake([
+            DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-empty'),
+        ]);
+
+        $falAi = new FalAi();
+
+        $response = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789')
+            ->delete();
+
+        expect($response->successful())->toBeTrue()
+            ->and($response->cdnDeleteResults)->toBeEmpty()
+            ->and($response->hasErrors())->toBeFalse()
+            ->and($response->getSuccessfulDeletions())->toBeEmpty()
+            ->and($response->getFailedDeletions())->toBeEmpty();
+    });
+
+    it('can retrieve request ID from builder', function (): void {
+        $falAi = new FalAi();
+
+        $builder = $falAi->platform()
+            ->deleteRequestPayloads('req_123456789');
+
+        expect($builder->requestId)->toBe('req_123456789');
     });
 
 });

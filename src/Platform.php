@@ -6,6 +6,7 @@ namespace Cjmellor\FalAi;
 
 use Cjmellor\FalAi\Connectors\PlatformConnector;
 use Cjmellor\FalAi\Support\AnalyticsRequest;
+use Cjmellor\FalAi\Support\DeleteRequestPayloadsRequest;
 use Cjmellor\FalAi\Support\EstimateCostRequest;
 use Cjmellor\FalAi\Support\PricingRequest;
 use Cjmellor\FalAi\Support\UsageRequest;
@@ -49,5 +50,16 @@ class Platform
     public function analytics(): AnalyticsRequest
     {
         return new AnalyticsRequest($this);
+    }
+
+    /**
+     * Create a fluent request builder for deleting request payloads
+     *
+     * Deletes IO payloads and associated CDN output files for a specific request.
+     * This action is irreversible.
+     */
+    public function deleteRequestPayloads(string $requestId): DeleteRequestPayloadsRequest
+    {
+        return new DeleteRequestPayloadsRequest($this, $requestId);
     }
 }
