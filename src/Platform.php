@@ -50,5 +50,4 @@ class Platform
     {
         return new AnalyticsRequest($this);
     }
-
 }
