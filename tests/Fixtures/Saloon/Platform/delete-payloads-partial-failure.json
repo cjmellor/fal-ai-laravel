@@ -1,0 +1,7 @@
+{
+    "statusCode": 200,
+    "headers": {
+        "content-type": ["application/json"]
+    },
+    "data": "{\"cdn_delete_results\":[{\"link\":\"https://v3.fal.media/files/abc123/output.png\",\"exception\":null},{\"link\":\"https://v3.fal.media/files/def456/output.jpg\",\"exception\":\"File not found\"},{\"link\":\"https://v3.fal.media/files/ghi789/output.webp\",\"exception\":\"Access denied\"}]}"
+}

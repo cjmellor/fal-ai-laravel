@@ -743,6 +743,77 @@ $totalUserErrors = $analytics->getTotalUserErrors();
 ]
 ```
 
+### 🗑️ Delete Request Payloads
+
+Delete IO payloads and associated CDN output files for a specific request. This is useful for cleaning up generated content and freeing storage.
+
+> [!WARNING]
+> This action is irreversible. Only output CDN files are deleted; input files may be used by other requests and are preserved.
+
+```php
+use Cjmellor\FalAi\Facades\FalAi;
+
+$response = FalAi::platform()
+    ->deleteRequestPayloads('req_123456789')
+    ->delete();
+
+// Check if all deletions succeeded
+if (!$response->hasErrors()) {
+    echo "All files deleted successfully";
+}
+
+// Access individual results
+foreach ($response->cdnDeleteResults as $result) {
+    echo $result['link'];        // CDN file URL
+    echo $result['exception'];   // null or error message
+}
+```
+
+#### With Idempotency Key
+
+Use an idempotency key for safe retries. Responses are cached for 10 minutes per unique key.
+
+```php
+$response = FalAi::platform()
+    ->deleteRequestPayloads('req_123456789')
+    ->withIdempotencyKey('unique-operation-key')
+    ->delete();
+```
+
+#### Filtering Results
+
+```php
+// Get only successful deletions
+$successful = $response->getSuccessfulDeletions();
+
+// Get only failed deletions
+$failed = $response->getFailedDeletions();
+
+// Check if any deletions failed
+if ($response->hasErrors()) {
+    foreach ($failed as $result) {
+        Log::error("Failed to delete: {$result['link']} - {$result['exception']}");
+    }
+}
+```
+
+**Example Response:**
+
+```php
+[
+    'cdn_delete_results' => [
+        [
+            'link' => 'https://v3.fal.media/files/abc123/output.png',
+            'exception' => null
+        ],
+        [
+            'link' => 'https://v3.fal.media/files/def456/output.jpg',
+            'exception' => 'File not found'
+        ]
+    ]
+]
+```
+
 ## 🔗 Fluent API Methods
 
 ### 🛠️ Common Methods
