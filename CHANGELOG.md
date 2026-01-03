@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.0 - 2026-01-03
+
+### What's Changed
+
+* Refactor to PHP 8.4 property hooks and asymmetric visibility by @cjmellor in https://github.com/cjmellor/fal-ai-laravel/pull/12
+* Add Delete Request Payloads Platform API endpoint by @cjmellor in https://github.com/cjmellor/fal-ai-laravel/pull/11
+
+**Full Changelog**: https://github.com/cjmellor/fal-ai-laravel/compare/v1.1.0...v1.2.0
+
 ## v1.0.1 - 2025-09-09
 
 ### What's Changed
