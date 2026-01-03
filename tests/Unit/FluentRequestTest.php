@@ -82,7 +82,7 @@ describe('FluentRequest Dynamic Methods', function (): void {
 
         expect($request)
             ->toBeInstanceOf(FluentRequest::class)
-            ->getBaseUrlOverride()->toBe($expectedUrl)
+            ->baseUrlOverride->toBe($expectedUrl)
             ->and($request->toArray())->toBeArray();
     })->with([
         'queue method' => ['queue', 'https://queue.fal.run'],

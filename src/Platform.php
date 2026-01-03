@@ -12,7 +12,7 @@ use Cjmellor\FalAi\Support\UsageRequest;
 
 class Platform
 {
-    protected PlatformConnector $connector;
+    public protected(set) PlatformConnector $connector;
 
     public function __construct()
     {
@@ -49,13 +49,5 @@ class Platform
     public function analytics(): AnalyticsRequest
     {
         return new AnalyticsRequest($this);
-    }
-
-    /**
-     * Get the platform connector instance
-     */
-    public function getConnector(): PlatformConnector
-    {
-        return $this->connector;
     }
 }

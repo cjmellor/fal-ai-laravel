@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use Cjmellor\FalAi\FalAi;
 use Cjmellor\FalAi\Requests\SubmitRequest;
-use InvalidArgumentException;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
 
@@ -33,7 +32,7 @@ it('completes webhook flow', function (): void {
         ->numImages(1);
 
     // Verify webhook URL is set
-    expect($request->getWebhookUrl())->toBe($webhookUrl);
+    expect($request->webhookUrl)->toBe($webhookUrl);
 
     // Execute the request
     $response = $request->run();
@@ -87,15 +86,15 @@ it('allows webhook url to be changed', function (): void {
         ->prompt('Test prompt');
 
     // Initially no webhook
-    expect($request->getWebhookUrl())->toBeNull();
+    expect($request->webhookUrl)->toBeNull();
 
     // Set first webhook
     $request->withWebhook('https://app1.com/webhook');
-    expect($request->getWebhookUrl())->toBe('https://app1.com/webhook');
+    expect($request->webhookUrl)->toBe('https://app1.com/webhook');
 
     // Change to second webhook
     $request->withWebhook('https://app2.com/webhook');
-    expect($request->getWebhookUrl())->toBe('https://app2.com/webhook');
+    expect($request->webhookUrl)->toBe('https://app2.com/webhook');
 });
 
 it('works with other fluent methods', function (): void {

@@ -14,19 +14,30 @@ class AnalyticsRequest
 {
     use Conditionable;
 
-    /** @var array<string> */
-    private array $endpointIds = [];
+    /**
+     * Get the current endpoint IDs
+     *
+     * @var array<string>
+     */
+    public private(set) array $endpointIds = [];
 
-    /** @var array<string> */
-    private array $expand = ['time_series', 'request_count'];
+    /**
+     * Get the current expand options
+     *
+     * @var array<string>
+     */
+    public private(set) array $expand = ['time_series', 'request_count'];
+
+    /**
+     * Get the current timeframe
+     */
+    public private(set) ?string $timeframe = null;
 
     private ?string $start = null;
 
     private ?string $end = null;
 
     private ?string $timezone = null;
-
-    private ?string $timeframe = null;
 
     private ?bool $boundToTimeframe = null;
 
@@ -344,36 +355,8 @@ class AnalyticsRequest
             cursor: $this->cursor,
         );
 
-        $response = $this->platform->getConnector()->send($request);
+        $response = $this->platform->connector->send($request);
 
         return new AnalyticsResponse($response, $response->json());
-    }
-
-    /**
-     * Get the current endpoint IDs
-     *
-     * @return array<string>
-     */
-    public function getEndpointIds(): array
-    {
-        return $this->endpointIds;
-    }
-
-    /**
-     * Get the current expand options
-     *
-     * @return array<string>
-     */
-    public function getExpand(): array
-    {
-        return $this->expand;
-    }
-
-    /**
-     * Get the current timeframe
-     */
-    public function getTimeframe(): ?string
-    {
-        return $this->timeframe;
     }
 }

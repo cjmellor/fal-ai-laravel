@@ -13,7 +13,7 @@ it('sets webhook url with withWebhook', function (): void {
 
     expect($result)
         ->toBeInstanceOf(FluentRequest::class)
-        ->and($result->getWebhookUrl())->toBe($webhookUrl);
+        ->and($result->webhookUrl)->toBe($webhookUrl);
 });
 
 it('validates webhook url', function (): void {
@@ -34,28 +34,28 @@ it('automatically uses queue when webhook is set', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
     $webhookUrl = 'https://example.com/webhook';
 
-    expect($request->getBaseUrlOverride())->toBeNull();
+    expect($request->baseUrlOverride)->toBeNull();
 
     $request->withWebhook($webhookUrl);
 
-    expect($request->getBaseUrlOverride())->toBe('https://queue.fal.run');
+    expect($request->baseUrlOverride)->toBe('https://queue.fal.run');
 });
 
 it('returns null when webhook url is not set', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
 
-    expect($request->getWebhookUrl())->toBeNull();
+    expect($request->webhookUrl)->toBeNull();
 });
 
 it('sets webhook url correctly', function (): void {
     $request = new FluentRequest(new FalAi('test-key'), 'test-model');
     $webhookUrl = 'https://example.com/webhook';
 
-    expect($request->getWebhookUrl())->toBeNull();
+    expect($request->webhookUrl)->toBeNull();
 
     $request->withWebhook($webhookUrl);
 
-    expect($request->getWebhookUrl())->toBe($webhookUrl);
+    expect($request->webhookUrl)->toBe($webhookUrl);
 });
 
 covers(FluentRequest::class);
