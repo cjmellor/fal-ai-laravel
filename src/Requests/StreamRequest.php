@@ -33,7 +33,7 @@ class StreamRequest extends Request implements HasBody
         $modelId = $this->modelId ?? config()->string(key: 'fal-ai.default_model');
 
         throw_if(
-            condition: empty($modelId),
+            condition: blank($modelId),
             exception: new InvalidModelException(message: 'Model ID cannot be empty')
         );
 

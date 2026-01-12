@@ -4,41 +4,52 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Support;
 
-use Cjmellor\FalAi\Contracts\FluentRequestInterface;
-use Cjmellor\FalAi\FalAi;
-use Cjmellor\FalAi\Responses\StreamResponse;
-use Cjmellor\FalAi\Responses\SubmitResponse;
+use Cjmellor\FalAi\Contracts\DriverInterface;
+use Cjmellor\FalAi\Enums\RequestMode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
 use InvalidArgumentException;
+use JsonException;
 use Throwable;
 
-class FluentRequest implements FluentRequestInterface
+/**
+ * Fluent request builder for AI model execution.
+ *
+ * Provides a chainable interface for building model requests.
+ * Works with any driver implementing DriverInterface.
+ */
+class FluentRequest
 {
     use Conditionable;
 
     /**
-     * Get the current data array
+     * The input data for the request
      */
     public private(set) array $data = [];
 
     /**
-     * Get the current base URL override
-     */
-    public private(set) ?string $baseUrlOverride = null;
-
-    /**
-     * Get the current webhook URL
+     * The webhook URL for async notifications
      */
     public private(set) ?string $webhookUrl = null;
 
-    private ?string $modelId;
+    /**
+     * The request mode (queue, sync, stream)
+     */
+    protected RequestMode $mode = RequestMode::Queue;
 
-    private FalAi $falAi;
+    /**
+     * The model identifier
+     */
+    protected ?string $modelId;
 
-    public function __construct(FalAi $falAi, ?string $modelId)
+    /**
+     * The driver instance that created this request
+     */
+    protected DriverInterface $driver;
+
+    public function __construct(DriverInterface $driver, ?string $modelId = null)
     {
-        $this->falAi = $falAi;
+        $this->driver = $driver;
         $this->modelId = $modelId;
     }
 
@@ -48,8 +59,8 @@ class FluentRequest implements FluentRequestInterface
     public function __call(string $method, array $arguments): self
     {
         // Check if this is an immutable call (ends with 'Immutable')
-        if (str_ends_with($method, 'Immutable')) {
-            $actualMethod = mb_substr($method, 0, -9); // Remove 'Immutable' suffix
+        if (Str::endsWith($method, 'Immutable')) {
+            $actualMethod = Str::beforeLast($method, 'Immutable');
 
             return $this->__callImmutable($actualMethod, $arguments);
         }
@@ -70,8 +81,8 @@ class FluentRequest implements FluentRequestInterface
      * @param  array  $arguments  The method arguments (first argument becomes the value)
      * @return self New instance with the data set
      *
-     * @example $newRequest = $request->withPromptImmutable('Hello world')
-     * @example $newRequest = $request->withImageSizeImmutable(512)
+     * @example $newRequest = $request->promptImmutable('Hello world')
+     * @example $newRequest = $request->imageSizeImmutable('1024x1024')
      */
     public function __callImmutable(string $method, array $arguments): self
     {
@@ -87,14 +98,24 @@ class FluentRequest implements FluentRequestInterface
      */
     public function sync(): self
     {
-        $this->baseUrlOverride = 'https://fal.run';
+        $this->mode = RequestMode::Sync;
+
+        return $this;
+    }
+
+    /**
+     * Set the request to use the queue endpoint explicitly
+     */
+    public function queue(): self
+    {
+        $this->mode = RequestMode::Queue;
 
         return $this;
     }
 
     /**
      * Set the webhook URL for asynchronous notifications
-     * Automatically switches to queue endpoint when webhook is specified
+     * Automatically switches to queue mode when webhook is specified
      *
      * @throws Throwable
      */
@@ -114,18 +135,8 @@ class FluentRequest implements FluentRequestInterface
 
         $this->webhookUrl = $url;
 
-        // Automatically switch to queue endpoint when webhook is specified
-        $this->queue();
-
-        return $this;
-    }
-
-    /**
-     * Set the request to use the queue endpoint explicitly
-     */
-    public function queue(): self
-    {
-        $this->baseUrlOverride = 'https://queue.fal.run';
+        // Automatically switch to queue mode when webhook is specified
+        $this->mode = RequestMode::Queue;
 
         return $this;
     }
@@ -133,22 +144,51 @@ class FluentRequest implements FluentRequestInterface
     /**
      * Execute the request
      */
-    public function run(): SubmitResponse
+    public function run(): mixed
     {
-        return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride, $this->webhookUrl);
+        return $this->driver->run($this);
     }
 
     /**
-     * Execute the request with streaming response.
-     *
-     * Automatically uses fal.run base URL and appends /stream to the endpoint.
+     * Execute the request with streaming response
      */
-    public function stream(): StreamResponse
+    public function stream(): mixed
     {
-        // Force sync endpoint for streaming (fal.run, not queue.fal.run)
-        $streamingBaseUrl = 'https://fal.run';
+        $this->mode = RequestMode::Stream;
 
-        return $this->falAi->stream($this->data, $this->modelId, $streamingBaseUrl);
+        return $this->driver->stream($this);
+    }
+
+    /**
+     * Get the model identifier
+     */
+    public function getModel(): ?string
+    {
+        return $this->modelId;
+    }
+
+    /**
+     * Get the input data
+     */
+    public function getInput(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * Get the request mode (queue, sync, stream)
+     */
+    public function getMode(): RequestMode
+    {
+        return $this->mode;
+    }
+
+    /**
+     * Get the webhook URL if set
+     */
+    public function getWebhook(): ?string
+    {
+        return $this->webhookUrl;
     }
 
     /**
@@ -161,10 +201,12 @@ class FluentRequest implements FluentRequestInterface
 
     /**
      * Get all data as JSON
+     *
+     * @throws JsonException
      */
     public function toJson(): string
     {
-        return json_encode($this->data);
+        return json_encode($this->data, JSON_THROW_ON_ERROR);
     }
 
     /**

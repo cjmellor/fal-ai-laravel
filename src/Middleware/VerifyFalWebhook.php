@@ -9,6 +9,7 @@ use Cjmellor\FalAi\Services\WebhookVerifier;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class VerifyFalWebhook
@@ -33,6 +34,11 @@ class VerifyFalWebhook
             return $next($request);
 
         } catch (WebhookVerificationException $e) {
+            Log::warning('Fal webhook verification failed', [
+                'error' => $e->getMessage(),
+                'ip' => $request->ip(),
+            ]);
+
             return response()->json([
                 'error' => 'Webhook verification failed',
                 'message' => config('app.debug') ? $e->getMessage() : 'Invalid webhook signature',

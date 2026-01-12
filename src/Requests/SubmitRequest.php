@@ -31,7 +31,7 @@ class SubmitRequest extends Request implements HasBody
         $modelId = $this->modelId ?? config()->string(key: 'fal-ai.default_model');
 
         throw_if(
-            condition: empty($modelId),
+            condition: blank($modelId),
             exception: new InvalidModelException('Model ID cannot be empty')
         );
 
@@ -47,7 +47,7 @@ class SubmitRequest extends Request implements HasBody
     {
         $query = [];
 
-        if ($this->webhookUrl !== null && $this->webhookUrl !== '' && $this->webhookUrl !== '0') {
+        if (filled($this->webhookUrl)) {
             $query['fal_webhook'] = $this->webhookUrl;
         }
 

@@ -187,11 +187,11 @@ class UsageRequest
     {
         $validTimeframes = ['minute', 'hour', 'day', 'week', 'month'];
 
-        if (! in_array($timeframe, $validTimeframes, true)) {
-            throw new InvalidArgumentException(
-                sprintf('Invalid timeframe. Must be one of: %s', implode(', ', $validTimeframes))
-            );
-        }
+        throw_unless(
+            in_array($timeframe, $validTimeframes, true),
+            InvalidArgumentException::class,
+            sprintf('Invalid timeframe. Must be one of: %s', implode(', ', $validTimeframes))
+        );
 
         $this->timeframe = $timeframe;
 
@@ -213,9 +213,11 @@ class UsageRequest
      */
     public function limit(int $limit): self
     {
-        if ($limit < 1) {
-            throw new InvalidArgumentException('Limit must be at least 1');
-        }
+        throw_if(
+            $limit < 1,
+            InvalidArgumentException::class,
+            'Limit must be at least 1'
+        );
 
         $this->limit = $limit;
 
