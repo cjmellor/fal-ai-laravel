@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Contracts\DriverInterface;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
+use Cjmellor\FalAi\Manager\AIManager;
 use Cjmellor\FalAi\Requests\SubmitRequest;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
@@ -11,18 +13,28 @@ beforeEach(function (): void {
     MockClient::destroyGlobal();
 
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
+        'fal-ai.default' => 'fal',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.default_model' => 'test-model',
     ]);
 });
 
 describe('Laravel Integration Tests', function (): void {
 
-    it('can resolve FalAi from service container', function (): void {
-        $falAi = app(FalAi::class);
+    it('can resolve AIManager from service container', function (): void {
+        $manager = app('fal-ai');
 
-        expect($falAi)->toBeInstanceOf(FalAi::class);
+        expect($manager)->toBeInstanceOf(AIManager::class);
+    });
+
+    it('can resolve driver from service container', function (): void {
+        $manager = app('fal-ai');
+        $driver = $manager->driver();
+
+        expect($driver)->toBeInstanceOf(DriverInterface::class)
+            ->and($driver)->toBeInstanceOf(FalDriver::class);
     });
 
     it('can use config values for API requests', function (): void {
@@ -33,8 +45,11 @@ describe('Laravel Integration Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = app(FalAi::class);
-        $response = $falAi->run(['prompt' => 'Test using config']);
+        $manager = app('fal-ai');
+        $response = $manager
+            ->model('test-model')
+            ->prompt('Test using config')
+            ->run();
 
         expect($response->status())->toBe(200)
             ->and($response->json()['request_id'])->toBe('config-test-123');
@@ -48,8 +63,11 @@ describe('Laravel Integration Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = app(FalAi::class);
-        $response = $falAi->run(['prompt' => 'Test with custom model'], 'custom-model');
+        $manager = app('fal-ai');
+        $response = $manager
+            ->model('custom-model')
+            ->prompt('Test with custom model')
+            ->run();
 
         expect($response->status())->toBe(200)
             ->and($response->json()['request_id'])->toBe('override-test-456');
@@ -63,7 +81,7 @@ describe('Laravel Integration Tests', function (): void {
             ], 200),
         ]);
 
-        $response = app(FalAi::class)
+        $response = app('fal-ai')
             ->model('test-model')
             ->prompt('Test fluent with container')
             ->imageSize('512x512')
@@ -75,7 +93,7 @@ describe('Laravel Integration Tests', function (): void {
 
     it('respects Laravel environment configuration', function (): void {
         // Test that the package respects Laravel's environment-based config
-        config(['fal-ai.default_model' => 'env-specific-model']);
+        config(['fal-ai.drivers.fal.default_model' => 'env-specific-model']);
 
         MockClient::global([
             SubmitRequest::class => MockResponse::make([
@@ -84,21 +102,25 @@ describe('Laravel Integration Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = app(FalAi::class);
-        $response = $falAi->run(['prompt' => 'Test environment config']);
+        // Need to resolve a fresh manager to pick up new config
+        $this->app->forgetInstance('fal-ai');
+        $manager = app('fal-ai');
+        $response = $manager
+            ->model('env-specific-model')
+            ->prompt('Test environment config')
+            ->run();
 
         expect($response->status())->toBe(200)
             ->and($response->json()['request_id'])->toBe('env-test-101');
     });
 
-    it('can be used as singleton from container', function (): void {
-        $falAi1 = app(FalAi::class);
-        $falAi2 = app(FalAi::class);
+    it('manager returns driver instances correctly', function (): void {
+        $manager = app('fal-ai');
+        $driver1 = $manager->driver('fal');
+        $driver2 = $manager->driver('fal');
 
-        // Note: FalAi is not registered as singleton in the service provider,
-        // so each resolution creates a new instance
-        expect($falAi1)->toBeInstanceOf(FalAi::class)
-            ->and($falAi2)->toBeInstanceOf(FalAi::class);
+        expect($driver1)->toBeInstanceOf(FalDriver::class)
+            ->and($driver2)->toBeInstanceOf(FalDriver::class);
     });
 
 })->group('feature', 'laravel-integration');

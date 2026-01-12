@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Cjmellor\FalAi\Enums\RequestMode;
+use Cjmellor\FalAi\Responses\StreamResponse;
 use Cjmellor\FalAi\Support\FluentRequest;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
@@ -9,11 +11,14 @@ use Saloon\Http\Faking\MockResponse;
 beforeEach(function (): void {
     MockClient::destroyGlobal();
 
-    // Set up test config
+    // Set up test config with new driver structure
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
+        'fal-ai.default' => 'fal',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://queue.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.platform_base_url' => 'https://api.fal.ai',
+        'fal-ai.drivers.fal.default_model' => 'test-model',
     ]);
 });
 
@@ -77,16 +82,16 @@ describe('FluentRequest Dynamic Methods', function (): void {
         ]);
     });
 
-    it('sets correct base URLs for different execution modes', function (string $method, string $expectedUrl): void {
+    it('sets correct mode for different execution modes', function (string $method, RequestMode $expectedMode): void {
         $request = createFluentRequest()->{$method}();
 
         expect($request)
             ->toBeInstanceOf(FluentRequest::class)
-            ->baseUrlOverride->toBe($expectedUrl)
+            ->getMode()->toBe($expectedMode)
             ->and($request->toArray())->toBeArray();
     })->with([
-        'queue method' => ['queue', 'https://queue.fal.run'],
-        'sync method' => ['sync', 'https://fal.run'],
+        'queue method' => ['queue', RequestMode::Queue],
+        'sync method' => ['sync', RequestMode::Sync],
     ]);
 
     it('converts camelCase methods to snake_case keys', function (): void {
@@ -293,5 +298,46 @@ describe('FluentRequest Conditional Methods', function (): void {
         expect($request->toArray())->toBe([
             'prompt' => 'A beautiful sunset',
         ]);
+    });
+});
+
+describe('FluentRequest Stream Mode', function (): void {
+    it('can execute stream mode request', function (): void {
+        MockClient::global([
+            MockResponse::make('data: {"step":1}\n\n', 200, [
+                'Content-Type' => 'text/event-stream',
+            ]),
+        ]);
+
+        $response = createFluentRequest()
+            ->prompt('Test prompt')
+            ->stream();
+
+        expect($response)->toBeInstanceOf(StreamResponse::class);
+    });
+
+    it('sets mode to Stream when calling stream()', function (): void {
+        // Create a mock driver to verify the mode is set correctly and stream is called
+        $receivedRequest = null;
+        $mockSaloonResponse = Mockery::mock(Saloon\Http\Response::class);
+
+        $driver = Mockery::mock(Cjmellor\FalAi\Contracts\DriverInterface::class);
+        $driver->shouldReceive('stream')
+            ->once()
+            ->withArgs(function ($request) use (&$receivedRequest) {
+                $receivedRequest = $request;
+
+                return $request instanceof FluentRequest;
+            })
+            ->andReturn(new StreamResponse($mockSaloonResponse));
+
+        $request = new FluentRequest($driver, 'test-model');
+        $result = $request->prompt('Test')->stream();
+
+        expect($receivedRequest)->toBeInstanceOf(FluentRequest::class)
+            ->and($receivedRequest->getMode())->toBe(RequestMode::Stream)
+            ->and($result)->toBeInstanceOf(StreamResponse::class);
+
+        Mockery::close();
     });
 });

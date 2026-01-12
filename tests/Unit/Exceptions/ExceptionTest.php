@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Cjmellor\FalAi\Exceptions\FalAiException;
 use Cjmellor\FalAi\Exceptions\InvalidModelException;
+use Cjmellor\FalAi\Exceptions\PlatformNotSupportedException;
 use Cjmellor\FalAi\Exceptions\RequestFailedException;
 use Cjmellor\FalAi\Requests\GetResultRequest;
 
@@ -106,5 +107,44 @@ describe('Exception Tests', function (): void {
         'FalAiException' => [FalAiException::class],
         'InvalidModelException' => [InvalidModelException::class],
         'RequestFailedException' => [RequestFailedException::class],
+    ]);
+});
+
+describe('PlatformNotSupportedException', function (): void {
+    it('can be created using forDriver factory method', function (): void {
+        $exception = PlatformNotSupportedException::forDriver('replicate');
+
+        expect($exception)->toBeInstanceOf(PlatformNotSupportedException::class);
+    });
+
+    it('includes driver name in error message', function (): void {
+        $exception = PlatformNotSupportedException::forDriver('replicate');
+
+        expect($exception->getMessage())->toContain('replicate');
+    });
+
+    it('indicates only fal driver supports platform APIs', function (): void {
+        $exception = PlatformNotSupportedException::forDriver('replicate');
+
+        expect($exception->getMessage())
+            ->toContain('Platform APIs are not supported')
+            ->toContain("'fal' driver");
+    });
+
+    it('extends FalAiException', function (): void {
+        $exception = PlatformNotSupportedException::forDriver('test-driver');
+
+        expect($exception)->toBeInstanceOf(FalAiException::class);
+    });
+
+    it('formats message correctly with different driver names', function (string $driver): void {
+        $exception = PlatformNotSupportedException::forDriver($driver);
+
+        expect($exception->getMessage())
+            ->toBe("Platform APIs are not supported by the '{$driver}' driver. Platform APIs are only available with the 'fal' driver.");
+    })->with([
+        'replicate' => ['replicate'],
+        'openai' => ['openai'],
+        'custom-driver' => ['custom-driver'],
     ]);
 });

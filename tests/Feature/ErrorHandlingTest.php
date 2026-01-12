@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Cjmellor\FalAi\Connectors\FalConnector;
 use Cjmellor\FalAi\Connectors\PlatformConnector;
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
 use Cjmellor\FalAi\Requests\Platform\GetPricingRequest;
 use Cjmellor\FalAi\Requests\SubmitRequest;
 use Saloon\Exceptions\Request\Statuses\ForbiddenException;
@@ -19,14 +19,27 @@ use Saloon\Laravel\Facades\Saloon;
 
 covers(FalConnector::class);
 covers(PlatformConnector::class);
+covers(FalDriver::class);
 
 beforeEach(function (): void {
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://queue.fal.run',
-        'fal-ai.platform_base_url' => 'https://api.fal.ai',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://queue.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.platform_base_url' => 'https://api.fal.ai',
     ]);
 });
+
+function createFalDriverForErrorTests(): FalDriver
+{
+    return new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://queue.fal.run',
+        'sync_url' => 'https://fal.run',
+        'platform_base_url' => 'https://api.fal.ai',
+        'default_model' => 'test-model',
+    ]);
+}
 
 describe('Model API Error Handling', function (): void {
     it('throws UnauthorizedException on 401 response', function (): void {
@@ -34,9 +47,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Unauthorized'], 401),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->prompt('test')->run())
             ->toThrow(UnauthorizedException::class);
     });
 
@@ -45,9 +58,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Forbidden'], 403),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->prompt('test')->run())
             ->toThrow(ForbiddenException::class);
     });
 
@@ -56,9 +69,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Not Found'], 404),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/non-existent-model'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/non-existent-model')->prompt('test')->run())
             ->toThrow(NotFoundException::class);
     });
 
@@ -67,9 +80,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Validation failed'], 422),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['invalid' => 'data'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->with(['invalid' => 'data'])->run())
             ->toThrow(UnprocessableEntityException::class);
     });
 
@@ -78,9 +91,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Rate limit exceeded'], 429),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->prompt('test')->run())
             ->toThrow(TooManyRequestsException::class);
     });
 
@@ -89,9 +102,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Internal server error'], 500),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->prompt('test')->run())
             ->toThrow(InternalServerErrorException::class);
     });
 
@@ -100,9 +113,9 @@ describe('Model API Error Handling', function (): void {
             SubmitRequest::class => MockResponse::make(['error' => 'Service unavailable'], 503),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev'))
+        expect(fn (): Cjmellor\FalAi\Responses\SubmitResponse => $driver->model('fal-ai/flux/dev')->prompt('test')->run())
             ->toThrow(ServiceUnavailableException::class);
     });
 });
@@ -113,9 +126,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Unauthorized'], 401),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(UnauthorizedException::class);
     });
 
@@ -124,9 +137,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Forbidden'], 403),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(ForbiddenException::class);
     });
 
@@ -135,9 +148,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Endpoint not found'], 404),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/non-existent')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/non-existent')->get())
             ->toThrow(NotFoundException::class);
     });
 
@@ -146,9 +159,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Rate limit exceeded'], 429),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(TooManyRequestsException::class);
     });
 
@@ -157,9 +170,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Internal server error'], 500),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(InternalServerErrorException::class);
     });
 
@@ -168,9 +181,9 @@ describe('Platform API Error Handling', function (): void {
             GetPricingRequest::class => MockResponse::make(['error' => 'Service unavailable'], 503),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForErrorTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
+        expect(fn (): Cjmellor\FalAi\Responses\PricingResponse => $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get())
             ->toThrow(ServiceUnavailableException::class);
     });
 });
@@ -186,8 +199,8 @@ describe('Successful requests do not throw', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->run(['prompt' => 'test'], 'fal-ai/flux/dev');
+        $driver = createFalDriverForErrorTests();
+        $response = $driver->model('fal-ai/flux/dev')->prompt('test')->run();
 
         expect($response->successful())->toBeTrue()
             ->and($response->requestId)->toBe('test-123');
@@ -204,8 +217,8 @@ describe('Successful requests do not throw', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get();
+        $driver = createFalDriverForErrorTests();
+        $response = $driver->platform()->pricing()->forEndpoint('fal-ai/flux/dev')->get();
 
         expect($response->successful())->toBeTrue()
             ->and($response->prices)->toHaveCount(1)

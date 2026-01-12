@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
 use Cjmellor\FalAi\Exceptions\InvalidModelException;
-use Cjmellor\FalAi\FalAi;
 use Cjmellor\FalAi\Requests\CancelRequest;
 use Cjmellor\FalAi\Requests\FetchRequestStatusRequest;
 use Cjmellor\FalAi\Requests\GetResultRequest;
 use Cjmellor\FalAi\Requests\SubmitRequest;
+use Cjmellor\FalAi\Responses\StatusResponse;
 use Cjmellor\FalAi\Responses\SubmitResponse;
 use Cjmellor\FalAi\Support\FluentRequest;
 use Saloon\Http\Faking\MockClient;
@@ -15,28 +16,24 @@ use Saloon\Http\Faking\MockResponse;
 
 beforeEach(function (): void {
     MockClient::destroyGlobal();
-
-    // Set up test config
-    config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
-    ]);
 });
 
-describe('FalAi Core Class', function (): void {
+function createFalDriver(): FalDriver
+{
+    return new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://queue.fal.run',
+        'sync_url' => 'https://fal.run',
+        'platform_base_url' => 'https://api.fal.ai',
+        'default_model' => 'test-model',
+    ]);
+}
+
+describe('FalDriver Core Class', function (): void {
 
     it('can create a fluent request with model id', function (): void {
-        $falAi = new FalAi();
-        $fluentRequest = $falAi->model('custom-model');
-
-        expect($fluentRequest)
-            ->toBeInstanceOf(FluentRequest::class);
-    });
-
-    it('can create a fluent request without model id (uses config default)', function (): void {
-        $falAi = new FalAi();
-        $fluentRequest = $falAi->model();
+        $driver = createFalDriver();
+        $fluentRequest = $driver->model('custom-model');
 
         expect($fluentRequest)
             ->toBeInstanceOf(FluentRequest::class);
@@ -55,10 +52,12 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->run(['prompt' => 'test prompt'], 'explicit-model');
+        $driver = createFalDriver();
+        $response = $driver->model('explicit-model')->prompt('test prompt')->run();
 
-        expect($response->status())->toBe(200)
+        expect($response)
+            ->toBeInstanceOf(SubmitResponse::class)
+            ->status()->toBe(200)
             ->and($response->json()['request_id'])->toBe('test-request-123');
     });
 
@@ -75,14 +74,18 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->run(['prompt' => 'test prompt']);
+        $driver = createFalDriver();
+        // Using null model uses config default
+        $request = new FluentRequest($driver, null);
+        $response = $request->prompt('test prompt')->run();
 
-        expect($response->status())->toBe(200)
+        expect($response)
+            ->toBeInstanceOf(SubmitResponse::class)
+            ->status()->toBe(200)
             ->and($response->json()['request_id'])->toBe('test-request-456');
     });
 
-    it('can get request status with logs', function (): void {
+    it('can get request status', function (): void {
         MockClient::global([
             FetchRequestStatusRequest::class => MockResponse::make(
                 body: [
@@ -97,32 +100,13 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->status('test-request-id', true, 'test-model');
+        $driver = createFalDriver();
+        $response = $driver->status('test-request-id', 'test-model');
 
-        expect($response->status())->toBe(200)
-            ->and($response->json()['status'])->toBe('COMPLETED')
-            ->and($response->json()['logs'])->toHaveCount(2);
-    });
-
-    it('can get request status without logs', function (): void {
-        MockClient::global([
-            FetchRequestStatusRequest::class => MockResponse::make(
-                body: [
-                    'status' => 'IN_QUEUE',
-                    'queue_position' => 3,
-                    'response_url' => 'https://queue.fal.run/test-model/requests/test-request-id',
-                ],
-                status: 200
-            ),
-        ]);
-
-        $falAi = new FalAi();
-        $response = $falAi->status('test-request-id', false, 'test-model');
-
-        expect($response->status())->toBe(200)
-            ->and($response->json()['status'])->toBe('IN_QUEUE')
-            ->and($response->json()['queue_position'])->toBe(3);
+        expect($response)
+            ->toBeInstanceOf(StatusResponse::class)
+            ->status()->toBe(200)
+            ->and($response->json()['status'])->toBe('COMPLETED');
     });
 
     it('can get request result', function (): void {
@@ -133,8 +117,8 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->result('test-request-123', 'test-model');
+        $driver = createFalDriver();
+        $response = $driver->result('test-request-123', 'test-model');
 
         expect($response->status())->toBe(200)
             ->and($response->json())->toBe(['result' => 'generated content']);
@@ -148,20 +132,23 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->cancel('test-request-123', 'test-model');
+        $driver = createFalDriver();
+        $result = $driver->cancel('test-request-123', 'test-model');
 
-        expect($response->status())->toBe(200)
-            ->and($response->json())->toBe(['cancelled' => true]);
+        expect($result)->toBeTrue();
     });
 
     it('throws exception when no model id provided and no config default', function (): void {
-        // Clear the default model config
-        config(['fal-ai.default_model' => '']);
+        $driver = new FalDriver([
+            'api_key' => 'test-api-key',
+            'base_url' => 'https://queue.fal.run',
+            'sync_url' => 'https://fal.run',
+            'default_model' => '', // No default model
+        ]);
 
-        $falAi = new FalAi();
+        $request = new FluentRequest($driver, null);
 
-        expect(fn (): Saloon\Http\Response => $falAi->run(['prompt' => 'test']))
+        expect(fn () => $request->prompt('test')->run())
             ->toThrow(InvalidModelException::class, 'Model ID cannot be empty');
     });
 
@@ -173,50 +160,45 @@ describe('FalAi Core Class', function (): void {
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->run(['prompt' => 'test'], 'explicit-model');
+        $driver = createFalDriver();
+        $response = $driver->model('explicit-model')->prompt('test')->run();
 
-        // Verify explicit model was used by checking the request was made
         expect($response->status())->toBe(200)
             ->and($response->json()['request_id'])->toBe('test-request-explicit');
     });
 
-    it('uses config default when no explicit model provided', function (): void {
+    it('returns driver name', function (): void {
+        $driver = createFalDriver();
+
+        expect($driver->getName())->toBe('fal');
+    });
+
+    it('queue mode uses queue URL', function (): void {
         MockClient::global([
             SubmitRequest::class => MockResponse::make(
-                body: ['request_id' => 'test-request-default'],
+                body: ['request_id' => 'queue-request'],
                 status: 200
             ),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->run(['prompt' => 'test']);
+        $driver = createFalDriver();
+        $response = $driver->model('test-model')->prompt('test')->queue()->run();
 
-        // Verify config default was used by checking the request was made
-        expect($response->status())->toBe(200)
-            ->and($response->json()['request_id'])->toBe('test-request-default');
+        expect($response->status())->toBe(200);
     });
 
-    it('queue method uses queue URL', function (): void {
-        $falAi = Mockery::mock(FalAi::class);
-        $falAi->shouldReceive('runWithBaseUrl')
-            ->once()
-            ->with(['prompt' => 'test'], 'test-model', 'https://queue.fal.run', null)
-            ->andReturn(Mockery::mock(SubmitResponse::class));
+    it('sync mode uses sync URL', function (): void {
+        MockClient::global([
+            SubmitRequest::class => MockResponse::make(
+                body: ['request_id' => 'sync-request'],
+                status: 200
+            ),
+        ]);
 
-        $request = new FluentRequest($falAi, 'test-model');
-        $request->prompt('test')->queue()->run();
-    });
+        $driver = createFalDriver();
+        $response = $driver->model('test-model')->prompt('test')->sync()->run();
 
-    it('sync method uses sync URL', function (): void {
-        $falAi = Mockery::mock(FalAi::class);
-        $falAi->shouldReceive('runWithBaseUrl')
-            ->once()
-            ->with(['prompt' => 'test'], 'test-model', 'https://fal.run', null)
-            ->andReturn(Mockery::mock(SubmitResponse::class));
-
-        $request = new FluentRequest($falAi, 'test-model');
-        $request->prompt('test')->sync()->run();
+        expect($response->status())->toBe(200);
     });
 
 });

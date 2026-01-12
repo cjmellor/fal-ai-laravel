@@ -5,10 +5,11 @@ declare(strict_types=1);
 use Cjmellor\FalAi\Connectors\FalConnector;
 
 beforeEach(function (): void {
-    // Set up test config
+    // Set up test config with new driver structure
     config([
-        'fal-ai.api_key' => 'test-api-key-12345',
-        'fal-ai.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key-12345',
+        'fal-ai.drivers.fal.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
     ]);
 });
 
@@ -21,7 +22,7 @@ describe('FalConnector', function (): void {
     });
 
     it('uses default queue URL when no override is provided', function (): void {
-        config(['fal-ai.base_url' => 'https://queue.fal.run']);
+        config(['fal-ai.drivers.fal.base_url' => 'https://queue.fal.run']);
 
         $connector = new FalConnector();
 
@@ -41,7 +42,7 @@ describe('FalConnector', function (): void {
     });
 
     it('falls back to config when no override is provided', function (): void {
-        config(['fal-ai.base_url' => 'https://custom.fal.run']);
+        config(['fal-ai.drivers.fal.base_url' => 'https://custom.fal.run']);
 
         $connector = new FalConnector();
 
