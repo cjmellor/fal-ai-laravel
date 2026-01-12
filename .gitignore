@@ -1,6 +1,6 @@
+.claude/scripts
+.claude/test-coverage-progress.txt
 .idea
-.trae/
-.vscode
 vendor
 /workbench/*
 !/workbench/routes
