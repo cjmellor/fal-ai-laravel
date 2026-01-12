@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class AnalyticsResponse
+class AnalyticsResponse extends AbstractResponse
 {
     /**
      * Get the time series analytics data
      *
-     * @return array<array{bucket: string, results: array<array{endpoint_id: string, request_count?: int, success_count?: int, user_error_count?: int, error_count?: int, p50_prepare_duration?: float, p75_prepare_duration?: float, p90_prepare_duration?: float, p50_duration?: float, p75_duration?: float, p90_duration?: float}>}>
+     * @var array<array{bucket: string, results: array<array{endpoint_id: string, request_count?: int, success_count?: int, user_error_count?: int, error_count?: int, p50_prepare_duration?: float, p75_prepare_duration?: float, p90_prepare_duration?: float, p50_duration?: float, p75_duration?: float, p90_duration?: float}>}>
      */
     public array $timeSeries {
         get => $this->data['time_series'] ?? [];
@@ -29,15 +27,6 @@ class AnalyticsResponse
      */
     public bool $hasMore {
         get => $this->data['has_more'] ?? false;
-    }
-
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
     }
 
     /**
@@ -186,45 +175,5 @@ class AnalyticsResponse
         }
 
         return ($this->getTotalSuccessesFor($endpointId) / $totalRequests) * 100;
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
     }
 }

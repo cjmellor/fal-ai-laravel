@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use SodiumException;
 
 class WebhookVerifier
@@ -64,6 +65,8 @@ class WebhookVerifier
     /**
      * Extract required headers from the request
      *
+     * @return array<string, string>
+     *
      * @throws WebhookVerificationException
      */
     private function extractHeaders(Request $request): array
@@ -106,6 +109,8 @@ class WebhookVerifier
 
     /**
      * Construct the message for signature verification
+     *
+     * @param  array<string, string>  $headers
      */
     private function constructMessage(array $headers, string $body): string
     {
@@ -121,6 +126,8 @@ class WebhookVerifier
 
     /**
      * Get public keys from JWKS endpoint with caching
+     *
+     * @return array<int, string>
      *
      * @throws WebhookVerificationException
      */
@@ -168,36 +175,46 @@ class WebhookVerifier
     /**
      * Verify the signature using ED25519
      *
+     * @param  array<int, string>  $publicKeys
+     *
      * @throws WebhookVerificationException
      */
     private function verifySignature(string $message, string $signature, array $publicKeys): bool
     {
-        try {
-            $signatureBytes = hex2bin($signature);
-            throw_if(
-                condition: $signatureBytes === false,
-                exception: new WebhookVerificationException('Invalid signature format')
-            );
+        $signatureBytes = hex2bin($signature);
+        throw_if(
+            condition: $signatureBytes === false,
+            exception: new WebhookVerificationException('Invalid signature format')
+        );
 
-            foreach ($publicKeys as $publicKey) {
-                try {
-                    if (sodium_crypto_sign_verify_detached($signatureBytes, $message, $publicKey)) {
-                        return true;
-                    }
-                } catch (SodiumException $e) {
-                    // Continue to next key
-                    continue;
+        $keyFailures = [];
+        foreach ($publicKeys as $index => $publicKey) {
+            try {
+                if (sodium_crypto_sign_verify_detached($signatureBytes, $message, $publicKey)) {
+                    return true;
                 }
-            }
+            } catch (SodiumException $e) {
+                $keyFailures[] = "Key {$index}: {$e->getMessage()}";
+                Log::debug('Fal webhook signature verification failed for key', [
+                    'key_index' => $index,
+                    'error' => $e->getMessage(),
+                ]);
 
-            throw new WebhookVerificationException('Signature verification failed');
-        } catch (SodiumException $e) {
-            throw new WebhookVerificationException('Cryptographic error: '.$e->getMessage());
+                continue;
+            }
         }
+
+        $errorMessage = $keyFailures !== []
+            ? 'Signature verification failed. Key errors: '.implode('; ', $keyFailures)
+            : 'Signature verification failed';
+
+        throw new WebhookVerificationException($errorMessage);
     }
 
     /**
      * Base64 URL decode
+     *
+     * @throws WebhookVerificationException
      */
     private function base64UrlDecode(string $data): string
     {
@@ -206,6 +223,13 @@ class WebhookVerifier
             $data .= str_repeat('=', 4 - $remainder);
         }
 
-        return base64_decode(strtr($data, '-_', '+/'));
+        $decoded = base64_decode(strtr($data, '-_', '+/'), true);
+
+        throw_if(
+            condition: $decoded === false,
+            exception: new WebhookVerificationException('Invalid base64 encoding in public key')
+        );
+
+        return $decoded;
     }
 }

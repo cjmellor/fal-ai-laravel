@@ -4,52 +4,83 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Support;
 
-use Cjmellor\FalAi\Contracts\FluentRequestInterface;
-use Cjmellor\FalAi\FalAi;
-use Cjmellor\FalAi\Responses\StreamResponse;
-use Cjmellor\FalAi\Responses\SubmitResponse;
+use Cjmellor\FalAi\Contracts\DriverInterface;
+use Cjmellor\FalAi\Enums\RequestMode;
 use Illuminate\Support\Str;
 use Illuminate\Support\Traits\Conditionable;
 use InvalidArgumentException;
+use JsonException;
 use Throwable;
 
-class FluentRequest implements FluentRequestInterface
+/**
+ * Fluent request builder for AI model execution.
+ *
+ * Provides a chainable interface for building model requests.
+ * Works with any driver implementing DriverInterface.
+ *
+ * @method self prompt(string $value) Set the prompt
+ * @method self imageSize(string $value) Set the image size
+ * @method self numImages(int $value) Set the number of images
+ * @method self numOutputs(int $value) Set the number of outputs (Replicate)
+ * @method self numInferenceSteps(int $value) Set inference steps
+ * @method self seed(int $value) Set the seed
+ * @method self guidanceScale(float $value) Set guidance scale
+ * @method self negativePrompt(string $value) Set negative prompt
+ * @method self imageUrl(string $value) Set image URL
+ * @method self maskUrl(string $value) Set mask URL
+ * @method self strength(float $value) Set strength
+ * @method self enableSafetyChecker(bool $value) Enable/disable safety checker
+ * @method self outputFormat(string $value) Set output format
+ * @method self promptImmutable(string $value) Set the prompt (immutable)
+ * @method self imageSizeImmutable(string $value) Set the image size (immutable)
+ */
+class FluentRequest
 {
     use Conditionable;
 
     /**
-     * Get the current data array
+     * The input data for the request
+     *
+     * @var array<string, mixed>
      */
     public private(set) array $data = [];
 
     /**
-     * Get the current base URL override
-     */
-    public private(set) ?string $baseUrlOverride = null;
-
-    /**
-     * Get the current webhook URL
+     * The webhook URL for async notifications
      */
     public private(set) ?string $webhookUrl = null;
 
-    private ?string $modelId;
+    /**
+     * The request mode (queue, sync, stream)
+     */
+    protected RequestMode $mode = RequestMode::Queue;
 
-    private FalAi $falAi;
+    /**
+     * The model identifier
+     */
+    protected ?string $modelId;
 
-    public function __construct(FalAi $falAi, ?string $modelId)
+    /**
+     * The driver instance that created this request
+     */
+    protected DriverInterface $driver;
+
+    public function __construct(DriverInterface $driver, ?string $modelId = null)
     {
-        $this->falAi = $falAi;
+        $this->driver = $driver;
         $this->modelId = $modelId;
     }
 
     /**
      * Handle dynamic method calls for fluent interface
+     *
+     * @param  array<int, mixed>  $arguments
      */
     public function __call(string $method, array $arguments): self
     {
         // Check if this is an immutable call (ends with 'Immutable')
-        if (str_ends_with($method, 'Immutable')) {
-            $actualMethod = mb_substr($method, 0, -9); // Remove 'Immutable' suffix
+        if (Str::endsWith($method, 'Immutable')) {
+            $actualMethod = Str::beforeLast($method, 'Immutable');
 
             return $this->__callImmutable($actualMethod, $arguments);
         }
@@ -67,11 +98,11 @@ class FluentRequest implements FluentRequestInterface
      * Handle dynamic method calls for immutable fluent interface
      *
      * @param  string  $method  The method name (will be converted to snake_case)
-     * @param  array  $arguments  The method arguments (first argument becomes the value)
+     * @param  array<int, mixed>  $arguments  The method arguments (first argument becomes the value)
      * @return self New instance with the data set
      *
-     * @example $newRequest = $request->withPromptImmutable('Hello world')
-     * @example $newRequest = $request->withImageSizeImmutable(512)
+     * @example $newRequest = $request->promptImmutable('Hello world')
+     * @example $newRequest = $request->imageSizeImmutable('1024x1024')
      */
     public function __callImmutable(string $method, array $arguments): self
     {
@@ -87,14 +118,24 @@ class FluentRequest implements FluentRequestInterface
      */
     public function sync(): self
     {
-        $this->baseUrlOverride = 'https://fal.run';
+        $this->mode = RequestMode::Sync;
+
+        return $this;
+    }
+
+    /**
+     * Set the request to use the queue endpoint explicitly
+     */
+    public function queue(): self
+    {
+        $this->mode = RequestMode::Queue;
 
         return $this;
     }
 
     /**
      * Set the webhook URL for asynchronous notifications
-     * Automatically switches to queue endpoint when webhook is specified
+     * Automatically switches to queue mode when webhook is specified
      *
      * @throws Throwable
      */
@@ -114,18 +155,8 @@ class FluentRequest implements FluentRequestInterface
 
         $this->webhookUrl = $url;
 
-        // Automatically switch to queue endpoint when webhook is specified
-        $this->queue();
-
-        return $this;
-    }
-
-    /**
-     * Set the request to use the queue endpoint explicitly
-     */
-    public function queue(): self
-    {
-        $this->baseUrlOverride = 'https://queue.fal.run';
+        // Automatically switch to queue mode when webhook is specified
+        $this->mode = RequestMode::Queue;
 
         return $this;
     }
@@ -133,26 +164,59 @@ class FluentRequest implements FluentRequestInterface
     /**
      * Execute the request
      */
-    public function run(): SubmitResponse
+    public function run(): mixed
     {
-        return $this->falAi->runWithBaseUrl($this->data, $this->modelId, $this->baseUrlOverride, $this->webhookUrl);
+        return $this->driver->run($this);
     }
 
     /**
-     * Execute the request with streaming response.
-     *
-     * Automatically uses fal.run base URL and appends /stream to the endpoint.
+     * Execute the request with streaming response
      */
-    public function stream(): StreamResponse
+    public function stream(): mixed
     {
-        // Force sync endpoint for streaming (fal.run, not queue.fal.run)
-        $streamingBaseUrl = 'https://fal.run';
+        $this->mode = RequestMode::Stream;
 
-        return $this->falAi->stream($this->data, $this->modelId, $streamingBaseUrl);
+        return $this->driver->stream($this);
+    }
+
+    /**
+     * Get the model identifier
+     */
+    public function getModel(): ?string
+    {
+        return $this->modelId;
+    }
+
+    /**
+     * Get the input data
+     *
+     * @return array<string, mixed>
+     */
+    public function getInput(): array
+    {
+        return $this->data;
+    }
+
+    /**
+     * Get the request mode (queue, sync, stream)
+     */
+    public function getMode(): RequestMode
+    {
+        return $this->mode;
+    }
+
+    /**
+     * Get the webhook URL if set
+     */
+    public function getWebhook(): ?string
+    {
+        return $this->webhookUrl;
     }
 
     /**
      * Get all data as an array
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -161,14 +225,18 @@ class FluentRequest implements FluentRequestInterface
 
     /**
      * Get all data as JSON
+     *
+     * @throws JsonException
      */
     public function toJson(): string
     {
-        return json_encode($this->data);
+        return json_encode($this->data, JSON_THROW_ON_ERROR);
     }
 
     /**
      * Set multiple data values at once
+     *
+     * @param  array<string, mixed>  $data
      */
     public function with(array $data): self
     {
@@ -179,6 +247,8 @@ class FluentRequest implements FluentRequestInterface
 
     /**
      * Set multiple data values at once (immutable - returns new instance)
+     *
+     * @param  array<string, mixed>  $data
      */
     public function withImmutable(array $data): self
     {

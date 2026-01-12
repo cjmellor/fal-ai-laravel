@@ -1,5 +1,42 @@
 # Changelog
 
+## v2.0.0 - 2026-01-11
+
+### Added
+
+- Multi-provider architecture with driver-based design
+- Replicate driver for Replicate.com API integration
+- `AIManager` class using Laravel's Manager pattern
+- `DriverInterface` contract for all drivers
+- `SupportsPlatform` interface for Platform API support
+- `DriverResponseInterface` for typed response handling
+- `RequestMode` enum for type-safe execution mode selection
+- `PredictionStatus` enum for Replicate prediction status handling
+- `PredictionResponse` class with typed accessors and status helpers
+- Replicate webhook verification middleware (`VerifyReplicateWebhook`)
+- Built-in `/webhooks/replicate` route for Replicate webhooks
+
+### Changed
+
+- Configuration restructured to support multiple drivers under `drivers.*`
+- Facade now proxies to `AIManager` instead of `FalAi` class
+- Platform APIs accessed via `platform()` method on Fal driver
+- Request modes use `RequestMode` enum internally
+
+### Removed
+
+- `FalAi` class (replaced by `FalDriver` and `AIManager`)
+- `FluentRequestInterface` contract
+- Direct `run()`, `status()`, `result()` methods on facade (use fluent interface)
+
+### Breaking Changes
+
+- Configuration structure changed - republish config file required
+- Must use fluent interface (`FalAi::model()->run()`) instead of direct method calls
+- `FalAi` class no longer exists - use facade or `AIManager`
+
+**Full Changelog**: https://github.com/cjmellor/fal-ai-laravel/compare/v1.2.0...v2.0.0
+
 ## v1.2.0 - 2026-01-03
 
 ### What's Changed

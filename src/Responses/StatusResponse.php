@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class StatusResponse
+class StatusResponse extends AbstractResponse
 {
     /**
      * Get the request status
      */
-    public string $status {
+    public string $requestStatus {
         get => $this->data['status'] ?? '';
     }
 
@@ -31,6 +29,8 @@ class StatusResponse
 
     /**
      * Get logs if available
+     *
+     * @var array<int, array<string, mixed>>|null
      */
     public ?array $logs {
         get => $this->data['logs'] ?? null;
@@ -38,6 +38,8 @@ class StatusResponse
 
     /**
      * Get metrics if available
+     *
+     * @var array<string, mixed>|null
      */
     public ?array $metrics {
         get => $this->data['metrics'] ?? null;
@@ -45,18 +47,11 @@ class StatusResponse
 
     /**
      * Get timings if available
+     *
+     * @var array<string, float>|null
      */
     public ?array $timings {
         get => $this->data['timings'] ?? null;
-    }
-
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
     }
 
     /**
@@ -64,7 +59,7 @@ class StatusResponse
      */
     public function isInQueue(): bool
     {
-        return $this->status === 'IN_QUEUE';
+        return $this->requestStatus === 'IN_QUEUE';
     }
 
     /**
@@ -72,7 +67,7 @@ class StatusResponse
      */
     public function isInProgress(): bool
     {
-        return $this->status === 'IN_PROGRESS';
+        return $this->requestStatus === 'IN_PROGRESS';
     }
 
     /**
@@ -80,46 +75,6 @@ class StatusResponse
      */
     public function isCompleted(): bool
     {
-        return $this->status === 'COMPLETED';
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
+        return $this->requestStatus === 'COMPLETED';
     }
 }

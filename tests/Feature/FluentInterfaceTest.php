@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
+use Cjmellor\FalAi\Enums\RequestMode;
 use Cjmellor\FalAi\Requests\SubmitRequest;
 use Cjmellor\FalAi\Support\FluentRequest;
 use Saloon\Http\Faking\MockClient;
@@ -12,11 +13,23 @@ beforeEach(function (): void {
     MockClient::destroyGlobal();
 
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
+        'fal-ai.default' => 'fal',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.default_model' => 'test-model',
     ]);
 });
+
+function createFalDriverForFluentTests(): FalDriver
+{
+    return new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://test.fal.run',
+        'sync_url' => 'https://fal.run',
+        'default_model' => 'test-model',
+    ]);
+}
 
 describe('Fluent Interface Feature Tests', function (): void {
 
@@ -28,9 +41,9 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->prompt('A majestic dragon soaring through storm clouds')
             ->imageSize('landscape_4_3')
@@ -46,10 +59,10 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('can create immutable request templates', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
         // Create a base template
-        $baseTemplate = $falAi
+        $baseTemplate = $driver
             ->model('test-model')
             ->imageSize('square_hd')
             ->numImages(1)
@@ -67,11 +80,11 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('can use conditional fluent methods', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
         $useHighQuality = true;
         $addNegativePrompt = false;
 
-        $request = $falAi
+        $request = $driver
             ->model('test-model')
             ->prompt('A beautiful sunset')
             ->when($useHighQuality, function ($req) {
@@ -97,10 +110,10 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
         // Chain multiple operations in a single fluent call
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->with([
                 'prompt' => 'Base prompt',
@@ -118,9 +131,9 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('can handle dynamic method conversion', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $request = $falAi
+        $request = $driver
             ->model('test-model')
             ->prompt('Test prompt')
             ->imageSize('512x512')
@@ -138,10 +151,10 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('can build template patterns for reuse', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
         // Create a high-quality template
-        $highQualityTemplate = $falAi
+        $highQualityTemplate = $driver
             ->model('test-model')
             ->imageSize('landscape_4_3')
             ->numInferenceSteps(100)
@@ -149,7 +162,7 @@ describe('Fluent Interface Feature Tests', function (): void {
             ->numImages(1);
 
         // Create a fast template
-        $fastTemplate = $falAi
+        $fastTemplate = $driver
             ->model('test-model')
             ->imageSize('square')
             ->numInferenceSteps(20)
@@ -174,9 +187,9 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('maintains fluent interface consistency', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $request = $falAi->model('test-model');
+        $request = $driver->model('test-model');
 
         // Every fluent method should return FluentRequest instance
         expect($request->prompt('Test'))->toBeInstanceOf(FluentRequest::class)
@@ -195,9 +208,9 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->queue()
             ->prompt('A beautiful landscape')
@@ -215,9 +228,9 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->sync()
             ->prompt('A quick generation')
@@ -235,9 +248,9 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->prompt('Complex chained request')
             ->imageSize('landscape_4_3')
@@ -258,10 +271,10 @@ describe('Fluent Interface Feature Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
         // This should work exactly as before
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->prompt('Default behavior test')
             ->run();
@@ -271,18 +284,18 @@ describe('Fluent Interface Feature Tests', function (): void {
     });
 
     it('allows switching between queue and sync in the same chain', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForFluentTests();
 
-        $request = $falAi
+        $request = $driver
             ->model('test-model')
             ->prompt('Test prompt')
             ->queue()
             ->imageSize('512x512')
             ->sync(); // This should override the queue setting
 
-        // We can't easily test the actual URL without mocking deeper,
-        // but we can verify the methods are chainable
-        expect($request)->toBeInstanceOf(FluentRequest::class);
+        // Verify the mode switched to sync
+        expect($request)->toBeInstanceOf(FluentRequest::class)
+            ->and($request->getMode())->toBe(RequestMode::Sync);
     });
 
 })->group('feature', 'fluent-interface');

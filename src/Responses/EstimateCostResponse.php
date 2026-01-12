@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class EstimateCostResponse
+class EstimateCostResponse extends AbstractResponse
 {
     /**
      * Get the estimate type used
@@ -27,54 +25,5 @@ class EstimateCostResponse
      */
     public string $currency {
         get => $this->data['currency'] ?? 'USD';
-    }
-
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
     }
 }

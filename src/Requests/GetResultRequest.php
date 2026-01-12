@@ -22,7 +22,7 @@ class GetResultRequest extends Request
         $modelId = $this->modelId ?? config()->string(key: 'fal-ai.default_model');
 
         throw_if(
-            condition: empty($modelId),
+            condition: blank($modelId),
             exception: new InvalidModelException('Model ID cannot be empty')
         );
 

@@ -17,8 +17,12 @@ class SubmitRequest extends Request implements HasBody
 
     protected Method $method = Method::POST;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         protected readonly ?string $modelId = null,
+        /** @var array<string, mixed> */
         protected readonly array $data = [],
         protected readonly ?string $webhookUrl = null,
     ) {}
@@ -31,23 +35,29 @@ class SubmitRequest extends Request implements HasBody
         $modelId = $this->modelId ?? config()->string(key: 'fal-ai.default_model');
 
         throw_if(
-            condition: empty($modelId),
+            condition: blank($modelId),
             exception: new InvalidModelException('Model ID cannot be empty')
         );
 
         return $modelId;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function defaultBody(): array
     {
         return $this->data;
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function defaultQuery(): array
     {
         $query = [];
 
-        if ($this->webhookUrl !== null && $this->webhookUrl !== '' && $this->webhookUrl !== '0') {
+        if (filled($this->webhookUrl)) {
             $query['fal_webhook'] = $this->webhookUrl;
         }
 

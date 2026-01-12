@@ -8,916 +8,537 @@
 ![Packagist PHP Version](https://img.shields.io/packagist/dependency-v/cjmellor/fal-ai-laravel/php?color=rgb%28165%20180%20252%29&logo=php&logoColor=rgb%28165%20180%20252%29&style=for-the-badge)
 ![Laravel Version](https://img.shields.io/badge/laravel-^12-rgb(235%2068%2050)?style=for-the-badge&logo=laravel)
 
-A Laravel package for integrating with the Fal.ai API, providing a fluent interface for AI model interactions with built-in webhook support.
+A Laravel package for integrating with the [Fal.ai](https://fal.ai) API, providing a fluent interface for AI model execution with built-in webhook support, streaming, and Platform APIs.
 
-## ✨ Features
+> [!NOTE]
+> **Multi-provider support:** This package also includes a [Replicate driver](#replicate-driver) for [Replicate.com](https://replicate.com).
 
-- 🚀 **Fluent API** - Chainable methods for easy request building
-- 🔗 **Webhook Support** - Secure webhook handling with ED25519 signature verification
-- ⚡ **Queue & Sync Modes** - Support for both immediate and queued requests
-- 📡 **Real-time Streaming** - Server-Sent Events (SSE) support for progressive AI model responses
-- 💰 **Platform API** - Access pricing, cost estimation, usage tracking, and analytics for models
-- 🛡️ **Security** - Built-in webhook verification middleware
-- 🧪 **Well Tested** - Comprehensive test suite
-- 📝 **Laravel Integration** - Native Laravel middleware and service provider
-- 🛣️ **Built-in Routes** - Pre-configured webhook endpoints ready to use
+## Features
 
-## 📦 Installation
-
-Install the package via Composer:
-
-```bash
-composer require fal-ai/laravel
-```
-
-Publish the configuration file:
-
-```bash
-php artisan vendor:publish --provider="FalAi\FalAiServiceProvider"
-```
-
-Add your Fal.ai API key to your `.env` file:
-
-```env
-FAL_API_KEY=your_fal_api_key_here
-```
-
-## 🚀 Basic Usage
-
-### 🎯 Simple Request
-
-```php
-use FalAi\FalAi;
-
-$falAi = new FalAi();
-
-$response = $falAi->model('fal-ai/flux/schnell')
-    ->prompt('A beautiful sunset over mountains')
-    ->imageSize('landscape_4_3')
-    ->run();
-```
-
-### ⚡ Queue vs Sync Modes
-
-> [!TIP]
-> **Queue mode** is the default and recommended for most use cases. It's perfect for complex generations that take time to process.
-
-#### 📋 Queue Mode (Default)
-
-```php
-$response = $falAi->model('fal-ai/flux/dev')
-    ->prompt('A futuristic cityscape')
-    ->queue() // Explicit queue mode (optional, it's the default)
-    ->run();
-
-// Returns: ['request_id' => 'req_123...', 'status' => 'IN_QUEUE']
-```
-
-**Use queue mode when:**
-- Generating high-quality images with many inference steps
-- Processing multiple images in batch
-- You don't need immediate results
-- Working with complex prompts or large image sizes
-
-#### ⚡ Sync Mode
-
-```php
-$response = $falAi->model('fal-ai/flux/schnell')
-    ->prompt('A beautiful landscape')
-    ->sync() // Switch to sync mode
-    ->run();
-
-// Returns the complete result immediately
-```
-
-**Use sync mode when:**
-- You need immediate results
-- Generating simple images with few inference steps
-- Building interactive applications
-- Testing and development
+- Fluent API for building model requests
+- Queue and Sync execution modes
+- Real-time streaming with Server-Sent Events (SSE)
+- Webhook support with ED25519 signature verification
+- Platform APIs for pricing, usage, analytics, and cost estimation
+- Multi-provider architecture
 
 > [!WARNING]
-> Sync mode may timeout for complex requests. Use queue mode for production applications.
+> **Upgrading from v1.x?** Version 2.0 is a complete architectural rewrite with breaking changes. The configuration structure, API methods, and class namespaces have all changed. You **must** follow the [Upgrade Guide](UPGRADE.md) to migrate from v1.x to v2.x.
 
-#### 🛰️ Polling Request Status
-You can poll the status of a queued request (useful when not using webhooks). Set includeLogs to true to retrieve execution logs.
+## Installation
 
-```php
-use Cjmellor\FalAi\Facades\FalAi;
+Install via Composer:
 
-$status = FalAi::status('req_123456789', includeLogs: true);
-
-if ($status->isInProgress()) {
-    $logs = $status->getLogs();
-}
+```bash
+composer require cjmellor/fal-ai-laravel
 ```
 
-#### 📦 Fetching Results by ID
-Fetch the final result payload for a completed request and use convenient accessors.
+Publish the configuration:
 
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-$result = FalAi::result('req_123456789');
-
-$firstImageUrl = $result->firstImageUrl; // Convenience accessor
-$all = $result->json();                  // Raw payload if you prefer
+```bash
+php artisan vendor:publish --tag=fal-ai-config
 ```
 
-#### ⛔ Cancelling a Queued Request
-Cancel a queued request that hasn’t started processing yet.
+Add your API key to `.env`:
 
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-FalAi::cancel('req_123456789', modelId: 'fal-ai/flux/schnell');
+```env
+FAL_API_KEY=your_fal_api_key
 ```
 
-#### 🧭 Submit Response Helpers
-Access useful URLs directly from the initial submit response.
+## Basic Usage
 
 ```php
 use Cjmellor\FalAi\Facades\FalAi;
 
 $response = FalAi::model('fal-ai/flux/schnell')
-    ->prompt('A photorealistic fox in a forest')
-    ->queue()
-    ->run();
-
-$requestId = $response->getRequestId();
-$statusUrl = $response->getStatusUrl();
-$cancelUrl = $response->getCancelUrl();
-```
-
-## 🔗 Webhook Support
-
-### 📤 Making Requests with Webhooks
-
-When you add a webhook URL to your request, it automatically switches to queue mode:
-
-```php
-$response = $falAi->model('fal-ai/flux/schnell')
-    ->withWebhook('https://myapp.com/webhooks/fal')
     ->prompt('A beautiful sunset over mountains')
     ->imageSize('landscape_4_3')
     ->run();
 
-// Returns: ['request_id' => 'req_123...', 'status' => 'IN_QUEUE']
+$requestId = $response->requestId;
 ```
 
-### 📋 Webhook URL Requirements
+### Using a Default Model
 
-- Must be a valid HTTPS URL
-- Must be publicly accessible
-- Should respond with 2xx status codes
-
-### 🛠️ Setting Up Webhook Endpoints
-
-You have two options for handling webhooks: use the built-in route or create your own custom endpoint.
-
-#### 🎯 Option 1: Built-in Webhook Route (Easiest)
-
-The package includes a pre-configured webhook route at `/webhooks/fal` that handles basic webhook processing:
-
-```php
-// This route is automatically registered by the package
-// POST /webhooks/fal
-
-// Use it in your requests:
-$response = $falAi->model('fal-ai/flux/schnell')
-    ->withWebhook(url('/webhooks/fal')) // Uses the built-in route
-    ->prompt('Your prompt here')
-    ->run();
-```
-
-> [!TIP]
-> The built-in route automatically verifies webhooks and returns appropriate responses. Perfect for getting started quickly!
-
-#### 🏭 Option 2: Custom Webhook Endpoint (Recommended for Production)
-
-```php
-use FalAi\Middleware\VerifyFalWebhook;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-Route::post('/webhooks/fal', function (Request $request) {
-    $payload = $request->json()->all();
-    
-    if ($payload['status'] === 'OK') {
-        $images = $payload['data']['images'];
-        // Process successful results
-        foreach ($images as $image) {
-            // Save image URL: $image['url']
-        }
-    } elseif ($payload['status'] === 'ERROR') {
-        $error = $payload['error'];
-        // Handle error
-    }
-    
-    return response()->json(['status' => 'processed']);
-})->middleware(VerifyFalWebhook::class);
-```
-
-For production applications, create a custom webhook endpoint with your own processing logic:
-
-```php
-use FalAi\Middleware\VerifyFalWebhook;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-Route::post('/webhooks/fal-custom', function (Request $request) {
-    $payload = $request->json()->all();
-    
-    if ($payload['status'] === 'OK') {
-        $images = $payload['data']['images'];
-        // Process successful results
-        foreach ($images as $image) {
-            // Save image URL: $image['url']
-            // Custom processing logic here
-        }
-    } elseif ($payload['status'] === 'ERROR') {
-        $error = $payload['error'];
-        // Handle error with custom logic
-    }
-    
-    return response()->json(['status' => 'processed']);
-})->middleware(VerifyFalWebhook::class);
-```
-
-#### 🔧 Option 3: Manual Verification (Advanced)
-
-For complete control over the verification process:
-
-```php
-use FalAi\Services\WebhookVerifier;
-use FalAi\Exceptions\WebhookVerificationException;
-
-Route::post('/webhooks/fal-manual', function (Request $request) {
-    $verifier = new WebhookVerifier();
-    
-    try {
-        $verifier->verify($request);
-        
-        // Webhook is valid, process payload
-        $payload = $request->json()->all();
-        
-        return response()->json(['status' => 'verified']);
-        
-    } catch (WebhookVerificationException $e) {
-        return response()->json([
-            'error' => 'Unauthorized',
-            'message' => 'Webhook verification failed'
-        ], 401);
-    }
-});
-```
-
-### 📄 Webhook Payload Examples
-
-#### ✅ Successful Completion
-
-```json
-{
-    "request_id": "req_123456789",
-    "status": "OK",
-    "data": {
-        "images": [
-            {
-                "url": "https://fal.media/files/generated-image.jpg",
-                "width": 1024,
-                "height": 768,
-                "content_type": "image/jpeg"
-            }
-        ],
-        "seed": 12345,
-        "has_nsfw_concepts": [false],
-        "prompt": "A beautiful sunset over mountains"
-    }
-}
-```
-
-#### ❌ Error
-
-```json
-{
-    "request_id": "req_123456789",
-    "status": "ERROR",
-    "error": {
-        "type": "ValidationError",
-        "message": "Invalid prompt provided"
-    }
-}
-```
-
-## 📡 Streaming
-
-The Fal.ai Laravel package supports real-time streaming responses using Server-Sent Events (SSE). This is particularly useful for AI models that generate content progressively, such as text generation or image creation with intermediate steps.
-
-### 🎯 Basic Streaming Usage
-
-To use streaming, call the `stream()` method instead of `run()` or `queue()`:
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-$streamResponse = FalAi::model('fal-ai/flux/schnell')
-    ->prompt('A beautiful sunset over mountains')
-    ->imageSize('landscape_4_3')
-    ->stream();
-
-    $streamResponse->getResponse();
-}
-```
-
-### 📊 Streaming vs Regular Requests
-
-| Feature         | Regular Request     | Streaming Request        |
-|-----------------|---------------------|--------------------------|
-| Response Time   | Wait for completion | Real-time updates        |
-| User Experience | Loading spinner     | Progress indicators      |
-| Resource Usage  | Lower               | Slightly higher          |
-| Complexity      | Simple              | Moderate                 |
-| Best For        | Simple workflows    | Interactive applications |
-
-### 📝 Important Notes
-
-- Streaming requests always use the `https://fal.run` endpoint regardless of configuration
-- Not all Fal.ai models support streaming - check the model documentation
-- Streaming responses cannot be cached like regular responses
-- Consider implementing proper error handling for network interruptions
-- Use streaming for models that benefit from progressive updates (text generation, multi-step image creation)
-
-## ⚙️ Configuration
-
-> [!NOTE]
-> You can customise the package behaviour by publishing and modifying the configuration file.
-
-The configuration file `config/fal-ai.php` contains the following options:
-
-```php
-return [
-    'api_key' => env('FAL_API_KEY'),
-    'base_url' => 'https://queue.fal.run',
-    'default_model' => '',
-    
-    'webhook' => [
-        // JWKS cache TTL in seconds (max 24 hours)
-        'jwks_cache_ttl' => env('FAL_WEBHOOK_JWKS_CACHE_TTL', 86400),
-        
-        // Timestamp tolerance in seconds (prevents replay attacks)
-        'timestamp_tolerance' => env('FAL_WEBHOOK_TIMESTAMP_TOLERANCE', 300),
-        
-        // HTTP timeout for JWKS fetching
-        'verification_timeout' => env('FAL_WEBHOOK_VERIFICATION_TIMEOUT', 10),
-    ],
-];
-```
-
-### Environment Variables
-
-```env
-# Required
-FAL_API_KEY=your_fal_api_key_here
-
-# Optional webhook configuration
-FAL_WEBHOOK_JWKS_CACHE_TTL=86400
-FAL_WEBHOOK_TIMESTAMP_TOLERANCE=300
-FAL_WEBHOOK_VERIFICATION_TIMEOUT=10
-```
-
-### 🎯 Using a Default Model
-Set a default model in config and omit the model ID in your calls.
+Set a default model in your config to omit the model ID:
 
 ```php
 // config/fal-ai.php
-// 'default_model' => 'fal-ai/flux/schnell'
+'drivers' => [
+    'fal' => [
+        'default_model' => 'fal-ai/flux/schnell',
+    ],
+],
 
-use Cjmellor\FalAi\Facades\FalAi;
-
+// Usage
 $response = FalAi::model()
     ->prompt('A cozy cabin in the woods')
     ->run();
 ```
 
-### 🌐 Overriding the Base URL
-If you need to direct a request to a specific Fal endpoint manually, you can override the base URL for a single call. The fluent builder already switches between queue and sync automatically in most cases.
+## Queue vs Sync Modes
+
+### Queue Mode (Default)
+
+Requests are processed asynchronously. Use webhooks or polling to get results.
 
 ```php
-use Cjmellor\FalAi\Facades\FalAi;
+$response = FalAi::model('fal-ai/flux/dev')
+    ->prompt('A detailed portrait')
+    ->queue() // Optional - queue is the default
+    ->run();
 
-$response = FalAi::runWithBaseUrl(
-    ['prompt' => 'A watercolor skyline at dawn'],
-    modelId: 'fal-ai/flux/schnell',
-    baseUrlOverride: 'https://queue.fal.run',
-    webhookUrl: 'https://example.com/webhooks/fal'
-);
+// Returns immediately with request_id
+$requestId = $response->requestId;
 ```
 
-## 💰 Platform API
+**Best for:** Complex generations, batch processing, production workloads.
 
-The Platform API provides access to pricing information and cost estimation for Fal.ai models. This is separate from the model execution APIs and uses a different endpoint (`api.fal.ai`).
+### Sync Mode
 
-### 📊 Get Model Pricing
-
-Retrieve pricing information for one or more model endpoints. Supports up to 50 endpoints per request.
+Requests block until complete and return the result directly.
 
 ```php
-use Cjmellor\FalAi\Facades\FalAi;
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A quick sketch')
+    ->sync()
+    ->run();
 
-// Get pricing for multiple endpoints
+// Returns the complete result
+$images = $response->json()['images'];
+```
+
+**Best for:** Simple generations, interactive applications, development.
+
+> [!WARNING]
+> Sync mode may timeout for complex requests.
+
+## Polling Status & Results
+
+For queued requests, poll for status and retrieve results:
+
+```php
+// Check status
+$status = FalAi::driver('fal')->status($requestId, 'fal-ai/flux/dev');
+
+if ($status->json()['status'] === 'COMPLETED') {
+    // Get the result
+    $result = FalAi::driver('fal')->result($requestId, 'fal-ai/flux/dev');
+    $images = $result->json()['images'];
+}
+
+// Cancel a queued request
+FalAi::driver('fal')->cancel($requestId, 'fal-ai/flux/dev');
+```
+
+### Response Helpers
+
+```php
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A fox in a forest')
+    ->run();
+
+$response->requestId;    // Request ID
+$response->statusUrl;    // URL to check status
+$response->responseUrl;  // URL to get result
+$response->cancelUrl;    // URL to cancel
+```
+
+## Streaming
+
+Stream responses in real-time using Server-Sent Events:
+
+```php
+$stream = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A dancing robot')
+    ->stream();
+
+// Process the stream response
+$stream->getResponse();
+```
+
+> [!NOTE]
+> Not all models support streaming. Check model documentation.
+
+## Webhook Support
+
+### Setting a Webhook URL
+
+Adding a webhook automatically uses queue mode:
+
+```php
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A beautiful landscape')
+    ->withWebhook('https://yourapp.com/webhooks/fal')
+    ->run();
+```
+
+> [!IMPORTANT]
+> Webhook URLs must use HTTPS and be publicly accessible.
+
+### Built-in Webhook Route
+
+The package provides a pre-configured route at `/webhooks/fal`:
+
+```php
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->withWebhook(url('/webhooks/fal'))
+    ->prompt('Your prompt')
+    ->run();
+```
+
+### Custom Webhook Endpoint
+
+Create your own endpoint with the verification middleware:
+
+```php
+use Cjmellor\FalAi\Middleware\VerifyFalWebhook;
+
+Route::post('/webhooks/fal-custom', function (Request $request) {
+    $payload = $request->json()->all();
+
+    if ($payload['status'] === 'OK') {
+        $images = $payload['data']['images'];
+        // Process images
+    }
+
+    return response()->json(['status' => 'processed']);
+})->middleware(VerifyFalWebhook::class);
+```
+
+### Manual Verification
+
+```php
+use Cjmellor\FalAi\Services\WebhookVerifier;
+use Cjmellor\FalAi\Exceptions\WebhookVerificationException;
+
+$verifier = new WebhookVerifier();
+
+try {
+    $verifier->verify($request);
+    // Webhook is valid
+} catch (WebhookVerificationException $e) {
+    // Verification failed
+}
+```
+
+### Webhook Payload
+
+**Success:**
+```json
+{
+    "request_id": "req_123",
+    "status": "OK",
+    "data": {
+        "images": [{"url": "https://...", "width": 1024, "height": 768}],
+        "seed": 12345
+    }
+}
+```
+
+**Error:**
+```json
+{
+    "request_id": "req_123",
+    "status": "ERROR",
+    "error": {"type": "ValidationError", "message": "Invalid prompt"}
+}
+```
+
+## Platform APIs
+
+Access Fal.ai Platform APIs for pricing, usage, and analytics.
+
+### Pricing
+
+```php
 $pricing = FalAi::platform()
     ->pricing()
     ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
     ->get();
 
-// Or add endpoints individually
-$pricing = FalAi::platform()
-    ->pricing()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->forEndpoint('fal-ai/flux/schnell')
-    ->get();
-
-// Access pricing data
-$unitPrice = $pricing->getUnitPriceFor('fal-ai/flux/dev'); // 0.025
-$priceInfo = $pricing->getPriceFor('fal-ai/flux/dev');
-// ['endpoint_id' => 'fal-ai/flux/dev', 'unit_price' => 0.025, 'unit' => 'image', 'currency' => 'USD']
+$unitPrice = $pricing->getUnitPriceFor('fal-ai/flux/dev');
 ```
 
-**Example Response:**
+### Cost Estimation
 
 ```php
-[
-    'prices' => [
-        [
-            'endpoint_id' => 'fal-ai/flux/dev',
-            'unit_price' => 0.025,
-            'unit' => 'image',
-            'currency' => 'USD'
-        ],
-        [
-            'endpoint_id' => 'fal-ai/flux/schnell',
-            'unit_price' => 0.003,
-            'unit' => 'image',
-            'currency' => 'USD'
-        ]
-    ],
-    'has_more' => false,
-    'next_cursor' => null
-]
-```
-
-### 💵 Estimate Costs
-
-Estimate the cost of API usage before making requests. Supports two estimation modes: historical API price and unit price.
-
-#### Historical API Price Mode
-
-Estimate costs based on the number of API calls you plan to make.
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
+// Estimate by API calls
 $estimate = FalAi::platform()
     ->estimateCost()
     ->historicalApiPrice()
     ->endpoint('fal-ai/flux/dev', callQuantity: 100)
-    ->endpoint('fal-ai/flux/schnell', callQuantity: 50)
     ->estimate();
 
-echo "Total cost: $" . $estimate->totalCost; // 3.65
-```
+echo $estimate->totalCost; // e.g., 2.50
 
-**Example Response:**
-
-```php
-[
-    'estimate_type' => 'historical_api_price',
-    'total_cost' => 3.65,
-    'currency' => 'USD'
-]
-```
-
-#### Unit Price Mode
-
-Estimate costs based on the number of billing units (e.g., images, megapixels).
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
+// Estimate by billing units
 $estimate = FalAi::platform()
     ->estimateCost()
     ->unitPrice()
     ->endpoint('fal-ai/flux/dev', unitQuantity: 100)
     ->estimate();
-
-echo "Total cost: $" . $estimate->totalCost; // 2.50
 ```
 
-**Example Response:**
-
-```php
-[
-    'estimate_type' => 'unit_price',
-    'total_cost' => 2.50,
-    'currency' => 'USD'
-]
-```
-
-#### Bulk Endpoint Estimation
-
-Set multiple endpoints at once using the `endpoints()` method:
-
-```php
-$estimate = FalAi::platform()
-    ->estimateCost()
-    ->historicalApiPrice()
-    ->endpoints([
-        'fal-ai/flux/dev' => ['call_quantity' => 100],
-        'fal-ai/flux/schnell' => ['call_quantity' => 50],
-    ])
-    ->estimate();
-```
-
-### 📊 Get Usage Data
-
-Access detailed usage line items with unit quantities, prices, and costs. Perfect for tracking your API consumption over time.
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-// Get usage for specific endpoints
-$usage = FalAi::platform()
-    ->usage()
-    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
-    ->get();
-
-// Access usage data
-$timeSeries = $usage->timeSeries;
-$totalCost = $usage->getTotalCost();         // Total cost across all endpoints
-$totalQuantity = $usage->getTotalQuantity(); // Total units consumed
-```
-
-#### Filter by Date Range
+### Usage
 
 ```php
 $usage = FalAi::platform()
     ->usage()
     ->forEndpoint('fal-ai/flux/dev')
-    ->between('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z')
-    ->timeframe('day')  // Aggregate by: 'minute', 'hour', 'day', 'week', 'month'
-    ->timezone('America/New_York')
-    ->get();
-```
-
-#### Include Additional Data
-
-```php
-$usage = FalAi::platform()
-    ->usage()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->withTimeSeries()  // Include time-bucketed data (default)
-    ->withSummary()     // Include aggregate summary
-    ->withAuthMethod()  // Include auth method breakdown
+    ->between('2025-01-01T00:00:00Z', '2025-01-31T23:59:59Z')
+    ->timeframe('day')
+    ->withSummary()
     ->get();
 
-// Access summary if included
-if ($usage->summary) {
-    echo "Total: $" . $usage->summary['total_cost'];
-}
+$totalCost = $usage->getTotalCost();
+$totalQuantity = $usage->getTotalQuantity();
 ```
 
-#### Get Usage for Specific Endpoint
-
-```php
-$usage = FalAi::platform()
-    ->usage()
-    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
-    ->get();
-
-// Get cost for specific endpoint
-$devCost = $usage->getTotalCostFor('fal-ai/flux/dev');
-$schnellCost = $usage->getTotalCostFor('fal-ai/flux/schnell');
-
-// Get quantity for specific endpoint
-$devQuantity = $usage->getTotalQuantityFor('fal-ai/flux/dev');
-```
-
-**Example Response:**
-
-```php
-[
-    'time_series' => [
-        [
-            'bucket' => '2025-01-15T00:00:00-05:00',
-            'results' => [
-                [
-                    'endpoint_id' => 'fal-ai/flux/dev',
-                    'unit' => 'image',
-                    'quantity' => 10,
-                    'unit_price' => 0.025,
-                    'cost' => 0.25,
-                    'currency' => 'USD',
-                    'auth_method' => 'Production Key'
-                ]
-            ]
-        ]
-    ],
-    'has_more' => false,
-    'next_cursor' => null
-]
-```
-
-### 📈 Get Analytics Data
-
-Query time-bucketed metrics for request counts, success/error rates, and latency percentiles. Essential for monitoring API performance.
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-// Get analytics for an endpoint (endpoint_id is required)
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->get();
-
-// Access metrics
-$totalRequests = $analytics->getTotalRequests();
-$successRate = $analytics->getSuccessRate(); // Returns percentage (e.g., 95.0)
-```
-
-#### Include Specific Metrics
+### Analytics
 
 ```php
 $analytics = FalAi::platform()
     ->analytics()
     ->forEndpoint('fal-ai/flux/dev')
-    ->withRequestCount()      // Total requests
-    ->withSuccessCount()      // Successful responses (2xx)
-    ->withErrorCount()        // Server errors (5xx)
-    ->withUserErrorCount()    // User errors (4xx)
-    ->withP50Duration()       // 50th percentile latency
-    ->withP90Duration()       // 90th percentile latency
-    ->get();
-```
-
-#### Convenience Methods
-
-```php
-// Include all error metrics
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->withAllErrors()          // user_error_count + error_count
-    ->get();
-
-// Include all latency metrics
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->withAllLatencyMetrics()  // P50, P75, P90 for both prepare and execution
-    ->get();
-
-// Include everything
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoint('fal-ai/flux/dev')
+    ->between('2025-01-01', '2025-01-31')
     ->withAllMetrics()
     ->get();
+
+$totalRequests = $analytics->getTotalRequests();
+$successRate = $analytics->getSuccessRate();
 ```
 
-#### Filter by Date Range and Timeframe
+### Delete Request Payloads
+
+Remove stored input/output data for a request:
 
 ```php
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoint('fal-ai/flux/dev')
-    ->between('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z')
-    ->timeframe('hour')  // Aggregate by: 'minute', 'hour', 'day', 'week', 'month'
-    ->timezone('UTC')
-    ->get();
-```
-
-#### Calculate Success Rates
-
-```php
-$analytics = FalAi::platform()
-    ->analytics()
-    ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
-    ->withSuccessCount()
-    ->get();
-
-// Overall success rate
-$overallRate = $analytics->getSuccessRate(); // e.g., 97.5
-
-// Per-endpoint success rate
-$devRate = $analytics->getSuccessRateFor('fal-ai/flux/dev');
-$schnellRate = $analytics->getSuccessRateFor('fal-ai/flux/schnell');
-
-// Get totals
-$totalErrors = $analytics->getTotalErrors();
-$totalUserErrors = $analytics->getTotalUserErrors();
-```
-
-**Example Response:**
-
-```php
-[
-    'time_series' => [
-        [
-            'bucket' => '2025-01-15T12:00:00-05:00',
-            'results' => [
-                [
-                    'endpoint_id' => 'fal-ai/flux/dev',
-                    'request_count' => 1500,
-                    'success_count' => 1450,
-                    'user_error_count' => 40,
-                    'error_count' => 10,
-                    'p50_duration' => 2.5,
-                    'p90_duration' => 4.8
-                ]
-            ]
-        ]
-    ],
-    'has_more' => false,
-    'next_cursor' => null
-]
-```
-
-### 🗑️ Delete Request Payloads
-
-Delete IO payloads and associated CDN output files for a specific request. This is useful for cleaning up generated content and freeing storage.
-
-> [!WARNING]
-> This action is irreversible. Only output CDN files are deleted; input files may be used by other requests and are preserved.
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
 $response = FalAi::platform()
     ->deleteRequestPayloads('req_123456789')
     ->delete();
 
-// Check if all deletions succeeded
 if (!$response->hasErrors()) {
-    echo "All files deleted successfully";
-}
-
-// Access individual results
-foreach ($response->cdnDeleteResults as $result) {
-    echo $result['link'];        // CDN file URL
-    echo $result['exception'];   // null or error message
+    echo "Deleted successfully";
 }
 ```
 
-#### With Idempotency Key
+## Fluent API
 
-Use an idempotency key for safe retries. Responses are cached for 10 minutes per unique key.
+### Dynamic Methods
+
+Method names are converted from camelCase to snake_case:
 
 ```php
-$response = FalAi::platform()
-    ->deleteRequestPayloads('req_123456789')
-    ->withIdempotencyKey('unique-operation-key')
-    ->delete();
+FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A sunset')           // prompt
+    ->imageSize('1024x1024')       // image_size
+    ->numInferenceSteps(50)        // num_inference_steps
+    ->guidanceScale(7.5)           // guidance_scale
+    ->negativePrompt('blurry')     // negative_prompt
+    ->numImages(2)                 // num_images
+    ->seed(12345)                  // seed
+    ->run();
 ```
 
-#### Filtering Results
+### Bulk Data
 
 ```php
-// Get only successful deletions
-$successful = $response->getSuccessfulDeletions();
-
-// Get only failed deletions
-$failed = $response->getFailedDeletions();
-
-// Check if any deletions failed
-if ($response->hasErrors()) {
-    foreach ($failed as $result) {
-        Log::error("Failed to delete: {$result['link']} - {$result['exception']}");
-    }
-}
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->with([
+        'prompt' => 'A landscape',
+        'image_size' => '1024x1024',
+        'num_images' => 2,
+    ])
+    ->run();
 ```
 
-**Example Response:**
+### Immutable Methods
+
+Create new instances without modifying the original:
 
 ```php
-[
-    'cdn_delete_results' => [
-        [
-            'link' => 'https://v3.fal.media/files/abc123/output.png',
-            'exception' => null
+$base = FalAi::model('fal-ai/flux/schnell')
+    ->imageSize('1024x1024')
+    ->numImages(1);
+
+$request1 = $base->promptImmutable('A dragon');
+$request2 = $base->promptImmutable('A unicorn');
+
+// $base is unchanged
+```
+
+### Conditional Methods
+
+```php
+$response = FalAi::model('fal-ai/flux/schnell')
+    ->prompt('A sunset')
+    ->when($highQuality, fn($req) => $req->numInferenceSteps(100))
+    ->unless($skipSeed, fn($req) => $req->seed(42))
+    ->run();
+```
+
+## Configuration
+
+```php
+// config/fal-ai.php
+return [
+    'default' => env('AI_DRIVER', 'fal'),
+
+    'drivers' => [
+        'fal' => [
+            'api_key' => env('FAL_API_KEY'),
+            'base_url' => env('FAL_BASE_URL', 'https://queue.fal.run'),
+            'sync_url' => env('FAL_SYNC_URL', 'https://fal.run'),
+            'platform_base_url' => env('FAL_PLATFORM_URL', 'https://api.fal.ai'),
+            'default_model' => env('FAL_DEFAULT_MODEL'),
+            'webhook' => [
+                'jwks_cache_ttl' => 86400,
+                'timestamp_tolerance' => 300,
+                'verification_timeout' => 10,
+            ],
         ],
-        [
-            'link' => 'https://v3.fal.media/files/def456/output.jpg',
-            'exception' => 'File not found'
-        ]
-    ]
-]
+    ],
+];
 ```
 
-## 🔗 Fluent API Methods
-
-### 🛠️ Common Methods
+## Error Handling
 
 ```php
-$request = $falAi->model('fal-ai/flux/schnell')
-    ->prompt('Your prompt here')           // Set the text prompt
-    ->imageSize('landscape_4_3')           // Set image dimensions
-    ->numImages(2)                         // Number of images to generate
-    ->seed(12345)                          // Set random seed
-    ->withWebhook('https://...')           // Add webhook URL
-    ->queue()                              // Use queue mode
-    ->sync();                              // Use sync mode
-```
-
-### 🧰 Adding and Inspecting Payload Data
-Enrich the request body with `with([...])` and dynamic setters. You can also inspect what will be sent.
-
-```php
-use Cjmellor\FalAi\Facades\FalAi;
-
-$request = FalAi::model('fal-ai/flux/schnell')
-    ->with(['num_images' => 2])
-    ->imageSize('square_hd')
-    ->prompt('An astronaut riding a horse');
-
-$payload = $request->toArray();
-$response = $request->run();
-```
-
-## ⚠️ Error Handling
-
-> [!IMPORTANT]
-> Always implement proper error handling in production applications to gracefully handle API failures and webhook verification issues.
-
-```php
-use FalAi\Exceptions\WebhookVerificationException;
-use InvalidArgumentException;
+use Saloon\Exceptions\Request\RequestException;
+use Cjmellor\FalAi\Exceptions\WebhookVerificationException;
 
 try {
-    $response = $falAi->model('fal-ai/flux/schnell')
-        ->withWebhook('https://myapp.com/webhook')
-        ->prompt('Test prompt')
+    $response = FalAi::model('fal-ai/flux/schnell')
+        ->prompt('A sunset')
         ->run();
-        
-    if (!$response->successful()) {
-        throw new Exception('API request failed: ' . $response->body());
-    }
-    
-} catch (InvalidArgumentException $e) {
-    // Invalid webhook URL or other validation errors
-    echo "Validation error: " . $e->getMessage();
+} catch (RequestException $e) {
+    $status = $e->getResponse()->status();
+    $body = $e->getResponse()->json();
 } catch (WebhookVerificationException $e) {
-    // Webhook verification failed (in webhook endpoints)
-    echo "Webhook error: " . $e->getMessage();
-} catch (Exception $e) {
-    // Other errors (network, API, etc.)
-    echo "Error: " . $e->getMessage();
+    // Webhook verification failed
 }
 ```
 
-## 🧪 Testing
+---
 
-Run the test suite:
+## Replicate Driver
+
+This package includes a driver for [Replicate.com](https://replicate.com).
+
+### Setup
+
+Add your Replicate API key to `.env`:
+
+```env
+REPLICATE_API_KEY=your_replicate_api_key
+```
+
+### Usage
+
+```php
+use Cjmellor\FalAi\Facades\FalAi as Ai;
+
+$response = Ai::driver('replicate')
+    ->model('stability-ai/sdxl')
+    ->prompt('A majestic dragon')
+    ->numOutputs(2)
+    ->run();
+```
+
+### Model Format
+
+Replicate models can use two formats:
+
+**Official Models:**
+```php
+// Format: owner/model
+->model('stability-ai/sdxl')
+```
+
+**Custom Models (with specific version):**
+```php
+// Format: owner/model:version
+->model('your-username/my-custom-model:da77bc59ee60...')
+```
+
+> [!NOTE]
+> The `:version` suffix is only required for custom models. Official Replicate models use just `owner/model`.
+
+### Checking Status
+
+Replicate uses polling for status:
+
+```php
+$response = Ai::driver('replicate')
+    ->model('stability-ai/sdxl')
+    ->prompt('A landscape')
+    ->run();
+
+// Poll for completion
+$status = Ai::driver('replicate')->status($response->id);
+
+// Status helpers
+$status->isRunning();    // starting or processing
+$status->isSucceeded();  // completed successfully
+$status->isFailed();     // failed
+$status->isCanceled();   // canceled
+$status->isTerminal();   // any final state
+
+// Get result when complete
+if ($status->isSucceeded()) {
+    $output = $status->output;
+}
+```
+
+### Key Differences from Fal
+
+| Feature | Fal.ai | Replicate |
+|---------|--------|-----------|
+| Queue/Sync modes | Yes | No (always async) |
+| Streaming | Yes | No (use polling) |
+| Platform APIs | Yes | No |
+| Webhooks | Yes | Yes |
+
+### Replicate Webhooks
+
+```php
+$response = Ai::driver('replicate')
+    ->model('stability-ai/sdxl')
+    ->prompt('A sunset')
+    ->withWebhook('https://yourapp.com/webhooks/replicate')
+    ->run();
+```
+
+Built-in route available at `/webhooks/replicate`.
+
+Configure webhook verification in `.env`:
+
+```env
+REPLICATE_WEBHOOK_SECRET=your_webhook_secret
+```
+
+---
+
+## Testing
 
 ```bash
 composer test
 ```
 
-## 🔒 Security
+## Security
 
-> [!CAUTION]
-> Webhook security is critical for protecting your application from malicious requests. Always use the provided verification mechanisms.
+> [!IMPORTANT]
+> **Webhook Verification:**
+> - **Fal.ai:** ED25519 signatures with JWKS
+> - **Replicate:** HMAC-SHA256 signatures
+>
+> Always use HTTPS for webhook URLs and keep API keys secure.
 
-### 🔐 Webhook Security
+## Contributing
 
-This package implements Fal.ai's webhook verification using:
+Contributions are welcome! Please submit a Pull Request.
 
-- **ED25519 signature verification** using Fal.ai's public keys
-- **Timestamp validation** to prevent replay attacks
-- **JWKS caching** for performance
-- **Automatic header extraction** and validation
+## License
 
-### 💡 Best Practices
-
-> [!TIP]
-> Follow these security practices to ensure your webhook endpoints are secure:
-
-1. **Always use HTTPS** for webhook URLs
-2. **Use the provided middleware** for automatic verification
-3. **Validate webhook payloads** in your application logic
-4. **Implement proper error handling** and logging
-5. **Monitor webhook endpoints** for suspicious activity
-6. **Use rate limiting** on webhook routes
-7. **Keep your API keys secure** and rotate them regularly
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This package is open-sourced software licensed under the [MIT license](LICENSE).
-
-## 💬 Support
-
-For support, please open an issue on GitHub or contact the maintainers.
+MIT License. See [LICENSE](LICENSE) for details.

@@ -8,5 +8,28 @@ parameters:
         - tests
     treatPhpDocTypesAsCertain: false
     ignoreErrors:
-        - '#Right side of && is always true#'
-        - '#should return array<.*> but returns array<mixed.*>#'
+        # Pest architecture tests use ->expect() chain
+        - '#Call to an undefined method Pest\\PendingCalls\\TestCall::expect\(\)#'
+        # Pest describe blocks use ->group() chain
+        - '#Call to an undefined method Pest\\PendingCalls\\DescribeCall::group\(\)#'
+        # Pest beforeEach sets dynamic properties on test cases
+        - '#Access to an undefined property PHPUnit\\Framework\\TestCase::\$\w+#'
+        # Saloon SSE streaming extension method
+        - '#Call to an undefined method Saloon\\Http\\Response::asEventSource\(\)#'
+        # Mockery mocks can be passed where concrete types expected in tests
+        - '#expects .+, Mockery\\MockInterface given#'
+        # Mockery expectations chain
+        - '#Call to an undefined method Mockery\\ExpectationInterface\|Mockery\\HigherOrderMessage::\w+\(\)#'
+        # Pest expect() property access for dynamic response properties
+        - '#Access to an undefined property Pest\\(Expectation|Mixins\\Expectation)<.+>::\$\w+#'
+        # Pest expect() method calls on expectations
+        - '#Call to an undefined method Pest\\(Expectation|Mixins\\Expectation)<.+>::\w+\(\)#'
+        # Test helper functions with untyped array parameters
+        - '#has parameter \$\w+ with no value type specified in iterable type array#'
+        # Pest unresolvable template types in expect()
+        - '#Unable to resolve the template type T\w+ in call to#'
+        - '#contains unresolvable type#'
+        # DriverInterface doesn't have platform() but some drivers do
+        - '#Call to an undefined method Cjmellor\\FalAi\\Contracts\\DriverInterface::platform\(\)#'
+        # Test data type mismatches (intentional for testing)
+        - '#Parameter \$logs of class Cjmellor\\FalAi\\Data\\StatusResponse constructor expects#'

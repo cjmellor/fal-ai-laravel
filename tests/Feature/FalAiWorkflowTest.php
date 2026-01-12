@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
 use Cjmellor\FalAi\Requests\CancelRequest;
 use Cjmellor\FalAi\Requests\FetchRequestStatusRequest;
 use Cjmellor\FalAi\Requests\GetResultRequest;
@@ -14,11 +14,23 @@ beforeEach(function (): void {
     MockClient::destroyGlobal();
 
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
+        'fal-ai.default' => 'fal',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.default_model' => 'test-model',
     ]);
 });
+
+function createFalDriverForWorkflowTests(): FalDriver
+{
+    return new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://test.fal.run',
+        'sync_url' => 'https://fal.run',
+        'default_model' => 'test-model',
+    ]);
+}
 
 describe('End-to-End Workflow Tests', function (): void {
 
@@ -32,15 +44,16 @@ describe('End-to-End Workflow Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
-
-        $requestData = [
-            'prompt' => 'Generate an image of a sunset',
-            'image_size' => '512x512',
-        ];
+        $driver = createFalDriverForWorkflowTests();
 
         // Act
-        $response = $falAi->run($requestData, 'test-model');
+        $response = $driver
+            ->model('test-model')
+            ->with([
+                'prompt' => 'Generate an image of a sunset',
+                'image_size' => '512x512',
+            ])
+            ->run();
 
         // Assert
         expect($response->status())->toBe(200)
@@ -59,12 +72,12 @@ describe('End-to-End Workflow Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForWorkflowTests();
 
         $requestId = 'test-request-123';
 
         // Act
-        $response = $falAi->status($requestId, false, 'test-model');
+        $response = $driver->status($requestId, 'test-model');
 
         // Assert
         expect($response->status())->toBe(200)
@@ -86,10 +99,10 @@ describe('End-to-End Workflow Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForWorkflowTests();
         $requestId = 'test-request-123';
 
-        $response = $falAi->result($requestId, 'test-model');
+        $response = $driver->result($requestId, 'test-model');
 
         // Assert
         $result = $response->json();
@@ -109,12 +122,10 @@ describe('End-to-End Workflow Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
-        $response = $falAi->cancel('test-request-123', 'test-model');
+        $driver = createFalDriverForWorkflowTests();
+        $result = $driver->cancel('test-request-123', 'test-model');
 
-        expect($response->status())->toBe(200)
-            ->and($response->json()['cancelled'])->toBeTrue()
-            ->and($response->json()['request_id'])->toBe('test-request-123');
+        expect($result)->toBeTrue();
     });
 
     it('can use fluent interface to submit request (mocked)', function (): void {
@@ -127,10 +138,10 @@ describe('End-to-End Workflow Tests', function (): void {
             ], 200),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForWorkflowTests();
 
         // Act - Submit using fluent interface
-        $response = $falAi
+        $response = $driver
             ->model('test-model')
             ->with([
                 'prompt' => 'A beautiful landscape with mountains',

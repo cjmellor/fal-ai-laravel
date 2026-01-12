@@ -29,7 +29,28 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
-        // $migration = include __DIR__.'/../database/migrations/MIGRATION.php';
-        // $migration->up();
+        // Set up default test config for the new driver structure
+        config()->set('fal-ai.default', 'fal');
+        config()->set('fal-ai.drivers.fal', [
+            'api_key' => 'test-api-key',
+            'base_url' => 'https://queue.fal.run',
+            'sync_url' => 'https://fal.run',
+            'platform_base_url' => 'https://api.fal.ai',
+            'default_model' => 'test-model',
+            'webhook' => [
+                'jwks_cache_ttl' => 86400,
+                'timestamp_tolerance' => 300,
+                'verification_timeout' => 10,
+            ],
+        ]);
+        config()->set('fal-ai.drivers.replicate', [
+            'api_key' => 'test-replicate-key',
+            'base_url' => 'https://api.replicate.com',
+            'default_model' => null,
+            'webhook' => [
+                'verify_signatures' => true,
+                'signing_secret' => 'test-secret',
+            ],
+        ]);
     }
 }

@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
+use Cjmellor\FalAi\Responses\AbstractResponse;
 use Cjmellor\FalAi\Responses\ResultResponse;
 use Cjmellor\FalAi\Responses\StatusResponse;
 use Cjmellor\FalAi\Responses\SubmitResponse;
 use Saloon\Http\Faking\MockClient;
 use Saloon\Http\Faking\MockResponse;
+use Saloon\Http\Response;
 
-covers(FalAi::class);
+covers(FalDriver::class);
+covers(AbstractResponse::class);
 covers(SubmitResponse::class);
 covers(StatusResponse::class);
 covers(ResultResponse::class);
@@ -18,12 +21,19 @@ beforeEach(function (): void {
     MockClient::destroyGlobal();
 
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://test.fal.run',
-        'fal-ai.default_model' => 'test-model',
+        'fal-ai.default' => 'fal',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://test.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.default_model' => 'test-model',
     ]);
 
-    $this->falAi = new FalAi();
+    $this->driver = new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://test.fal.run',
+        'sync_url' => 'https://fal.run',
+        'default_model' => 'test-model',
+    ]);
 });
 
 describe('SubmitResponse Features', function (): void {
@@ -45,7 +55,10 @@ describe('SubmitResponse Features', function (): void {
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
 
-        $response = $this->falAi->run(['prompt' => 'a cat'], 'fal-ai/flux-1');
+        $response = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('a cat')
+            ->run();
 
         expect($response)
             ->toBeInstanceOf(SubmitResponse::class)
@@ -60,7 +73,10 @@ describe('SubmitResponse Features', function (): void {
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
 
-        $response = $this->falAi->run(['prompt' => 'a cat'], 'fal-ai/flux-1');
+        $response = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('a cat')
+            ->run();
 
         expect($response)
             ->requestId->toBe('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9')
@@ -74,7 +90,10 @@ describe('SubmitResponse Features', function (): void {
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($this->submitResponseData, 200),
         ]);
 
-        $response = $this->falAi->run(['prompt' => 'a cat'], 'fal-ai/flux-1');
+        $response = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('a cat')
+            ->run();
 
         expect($response->json())
             ->toBe($this->submitResponseData)
@@ -106,11 +125,11 @@ describe('StatusResponse Features', function (): void {
             Cjmellor\FalAi\Requests\FetchRequestStatusRequest::class => MockResponse::make($statusData, 200),
         ]);
 
-        $response = $this->falAi->status('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', false, 'fal-ai/flux-1');
+        $response = $this->driver->status('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
 
         expect($response)
             ->toBeInstanceOf(StatusResponse::class)
-            ->status->toBe($status)
+            ->requestStatus->toBe($status)
             ->queuePosition->toBe($queuePosition)
             ->isInQueue()->toBe($expectedMethods['isInQueue'])
             ->isInProgress()->toBe($expectedMethods['isInProgress'])
@@ -133,7 +152,7 @@ describe('StatusResponse Features', function (): void {
             Cjmellor\FalAi\Requests\FetchRequestStatusRequest::class => MockResponse::make($statusData, 200),
         ]);
 
-        $response = $this->falAi->status('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', false, 'fal-ai/flux-1');
+        $response = $this->driver->status('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
 
         expect($response)
             ->queuePosition->toBeNull()
@@ -172,7 +191,7 @@ describe('ResultResponse Features', function (): void {
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
 
-        $response = $this->falAi->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
+        $response = $this->driver->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
 
         expect($response)
             ->toBeInstanceOf(ResultResponse::class)
@@ -187,34 +206,24 @@ describe('ResultResponse Features', function (): void {
             ->hasNsfwConcepts->toBe([false]);
     });
 
-    dataset('image_access_properties', [
-        'firstImageUrl' => 'firstImageUrl',
-        'primaryImage' => 'primaryImage',
-        'mainImageUrl' => 'mainImageUrl',
-        'imageUrl' => 'imageUrl',
-    ]);
-
-    it('provides multiple ways to access the primary image', function (string $property): void {
+    it('provides first image URL access', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
 
-        $response = $this->falAi->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
+        $response = $this->driver->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
         $expectedUrl = 'https://v3.fal.media/files/elephant/wda6SlJHUKZWvs1bxa97e.jpeg';
 
-        if (in_array($property, ['firstImageUrl', 'mainImageUrl', 'imageUrl'])) {
-            expect($response->$property)->toBe($expectedUrl);
-        } else {
-            expect($response->$property)->toBe($this->resultData['images'][0]);
-        }
-    })->with('image_access_properties');
+        expect($response->firstImageUrl)->toBe($expectedUrl)
+            ->and($response->firstImage)->toBe($this->resultData['images'][0]);
+    });
 
     it('provides convenient image metadata access', function (): void {
         MockClient::global([
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
 
-        $response = $this->falAi->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
+        $response = $this->driver->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
 
         expect($response)
             ->images->toHaveCount(1)
@@ -230,7 +239,7 @@ describe('ResultResponse Features', function (): void {
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($this->resultData, 200),
         ]);
 
-        $response = $this->falAi->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
+        $response = $this->driver->result('8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9', 'fal-ai/flux-1');
 
         expect($response)
             ->seed->toBe(2131857352)
@@ -257,7 +266,7 @@ describe('ResultResponse Features', function (): void {
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($emptyResultData, 200),
         ]);
 
-        $response = $this->falAi->result('test-id', 'fal-ai/flux-1');
+        $response = $this->driver->result('test-id', 'fal-ai/flux-1');
 
         expect($response)
             ->firstImageUrl->toBeNull()
@@ -290,7 +299,7 @@ describe('Fluent API Integration', function (): void {
             Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($submitData, 200),
         ]);
 
-        $response = $this->falAi
+        $response = $this->driver
             ->model('fal-ai/flux-1/schnell')
             ->prompt('a beautiful sunset')
             ->imageSize('landscape_4_3')
@@ -323,9 +332,13 @@ describe('Backward Compatibility', function (): void {
             Cjmellor\FalAi\Requests\GetResultRequest::class => MockResponse::make($resultData, 200),
         ]);
 
-        $submitResponse = $this->falAi->run(['prompt' => 'test'], 'fal-ai/flux-1');
-        $statusResponse = $this->falAi->status('test-id', false, 'fal-ai/flux-1');
-        $resultResponse = $this->falAi->result('test-id', 'fal-ai/flux-1');
+        $submitResponse = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('test')
+            ->run();
+
+        $statusResponse = $this->driver->status('test-id', 'fal-ai/flux-1');
+        $resultResponse = $this->driver->result('test-id', 'fal-ai/flux-1');
 
         // All old methods still work
         expect($submitResponse->json())->toBe($submitData);
@@ -339,5 +352,46 @@ describe('Backward Compatibility', function (): void {
         expect($resultResponse->json())->toBe($resultData);
         expect($resultResponse->status())->toBe(200);
         expect($resultResponse->successful())->toBeTrue();
+    });
+});
+
+describe('AbstractResponse', function (): void {
+    it('provides access to the underlying Saloon response via getResponse()', function (): void {
+        $submitData = [
+            'request_id' => '8c24b4f5-ae1e-45fc-8858-e0be6efd2ed9',
+            'status_url' => 'https://example.com/status',
+        ];
+
+        MockClient::global([
+            Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($submitData, 200),
+        ]);
+
+        $response = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('test')
+            ->run();
+
+        $saloonResponse = $response->getResponse();
+
+        expect($saloonResponse)
+            ->toBeInstanceOf(Response::class)
+            ->and($saloonResponse->status())->toBe(200)
+            ->and($saloonResponse->json())->toBe($submitData);
+    });
+
+    it('provides failed() method to check request failure', function (): void {
+        $submitData = ['request_id' => 'test-id'];
+
+        MockClient::global([
+            Cjmellor\FalAi\Requests\SubmitRequest::class => MockResponse::make($submitData, 200),
+        ]);
+
+        $response = $this->driver
+            ->model('fal-ai/flux-1')
+            ->prompt('test')
+            ->run();
+
+        expect($response->failed())->toBeFalse()
+            ->and($response->successful())->toBeTrue();
     });
 });

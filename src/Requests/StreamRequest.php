@@ -20,8 +20,12 @@ class StreamRequest extends Request implements HasBody
 
     protected Method $method = Method::POST;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         protected readonly ?string $modelId = null,
+        /** @var array<string, mixed> */
         protected readonly array $data = [],
     ) {}
 
@@ -33,7 +37,7 @@ class StreamRequest extends Request implements HasBody
         $modelId = $this->modelId ?? config()->string(key: 'fal-ai.default_model');
 
         throw_if(
-            condition: empty($modelId),
+            condition: blank($modelId),
             exception: new InvalidModelException(message: 'Model ID cannot be empty')
         );
 
@@ -41,6 +45,9 @@ class StreamRequest extends Request implements HasBody
         return "$modelId/stream";
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function defaultBody(): array
     {
         return $this->data;

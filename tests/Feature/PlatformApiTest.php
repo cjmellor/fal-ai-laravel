@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Cjmellor\FalAi\FalAi;
+use Cjmellor\FalAi\Drivers\Fal\FalDriver;
 use Cjmellor\FalAi\Requests\Platform\DeleteRequestPayloadsRequest;
 use Cjmellor\FalAi\Requests\Platform\EstimateCostRequest;
 use Cjmellor\FalAi\Requests\Platform\GetAnalyticsRequest;
@@ -13,11 +13,23 @@ use Saloon\Laravel\Facades\Saloon;
 
 beforeEach(function (): void {
     config([
-        'fal-ai.api_key' => 'test-api-key',
-        'fal-ai.base_url' => 'https://queue.fal.run',
-        'fal-ai.platform_base_url' => 'https://api.fal.ai',
+        'fal-ai.drivers.fal.api_key' => 'test-api-key',
+        'fal-ai.drivers.fal.base_url' => 'https://queue.fal.run',
+        'fal-ai.drivers.fal.sync_url' => 'https://fal.run',
+        'fal-ai.drivers.fal.platform_base_url' => 'https://api.fal.ai',
     ]);
 });
+
+function createFalDriverForPlatformTests(): FalDriver
+{
+    return new FalDriver([
+        'api_key' => 'test-api-key',
+        'base_url' => 'https://queue.fal.run',
+        'sync_url' => 'https://fal.run',
+        'platform_base_url' => 'https://api.fal.ai',
+        'default_model' => 'test-model',
+    ]);
+}
 
 describe('Platform Pricing API', function (): void {
 
@@ -26,9 +38,9 @@ describe('Platform Pricing API', function (): void {
             GetPricingRequest::class => MockResponse::fixture('Platform/pricing-multiple-endpoints'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->pricing()
+        $response = $driver->platform()->pricing()
             ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
             ->get();
 
@@ -46,9 +58,9 @@ describe('Platform Pricing API', function (): void {
             GetPricingRequest::class => MockResponse::fixture('Platform/pricing-single-endpoint'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->pricing()
+        $response = $driver->platform()->pricing()
             ->forEndpoint('fal-ai/flux/dev')
             ->get();
 
@@ -62,9 +74,9 @@ describe('Platform Pricing API', function (): void {
             GetPricingRequest::class => MockResponse::fixture('Platform/pricing-multiple-endpoints'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->pricing()
+        $response = $driver->platform()->pricing()
             ->forEndpoint('fal-ai/flux/dev')
             ->forEndpoint('fal-ai/flux/schnell')
             ->get();
@@ -78,9 +90,9 @@ describe('Platform Pricing API', function (): void {
             GetPricingRequest::class => MockResponse::fixture('Platform/pricing-single-endpoint'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->pricing()
+        $response = $driver->platform()->pricing()
             ->forEndpoints(['fal-ai/flux/dev'])
             ->get();
 
@@ -97,9 +109,9 @@ describe('Platform Estimate Cost API', function (): void {
             EstimateCostRequest::class => MockResponse::fixture('Platform/estimate-historical-api-price'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->estimateCost()
+        $response = $driver->platform()->estimateCost()
             ->historicalApiPrice()
             ->endpoint('fal-ai/flux/dev', callQuantity: 100)
             ->endpoint('fal-ai/flux/schnell', callQuantity: 50)
@@ -116,9 +128,9 @@ describe('Platform Estimate Cost API', function (): void {
             EstimateCostRequest::class => MockResponse::fixture('Platform/estimate-unit-price'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->estimateCost()
+        $response = $driver->platform()->estimateCost()
             ->unitPrice()
             ->endpoint('fal-ai/flux/dev', unitQuantity: 100)
             ->estimate();
@@ -133,9 +145,9 @@ describe('Platform Estimate Cost API', function (): void {
             EstimateCostRequest::class => MockResponse::fixture('Platform/estimate-historical-api-price'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->estimateCost()
+        $response = $driver->platform()->estimateCost()
             ->historicalApiPrice()
             ->endpoints([
                 'fal-ai/flux/dev' => ['call_quantity' => 100],
@@ -148,27 +160,27 @@ describe('Platform Estimate Cost API', function (): void {
     });
 
     it('throws exception when no endpoints provided', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\EstimateCostResponse => $falAi->platform()->estimateCost()
+        expect(fn (): Cjmellor\FalAi\Responses\EstimateCostResponse => $driver->platform()->estimateCost()
             ->historicalApiPrice()
             ->estimate()
         )->toThrow(InvalidArgumentException::class, 'At least one endpoint must be provided');
     });
 
     it('throws exception when endpoint has no quantity', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Support\EstimateCostRequest => $falAi->platform()->estimateCost()
+        expect(fn (): Cjmellor\FalAi\Support\EstimateCostRequest => $driver->platform()->estimateCost()
             ->historicalApiPrice()
             ->endpoint('fal-ai/flux/dev')
         )->toThrow(InvalidArgumentException::class, 'Either callQuantity or unitQuantity must be provided');
     });
 
     it('defaults to historical api price estimate type', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->estimateCost();
+        $builder = $driver->platform()->estimateCost();
 
         expect($builder->estimateType)->toBe('historical_api_price');
     });
@@ -178,19 +190,19 @@ describe('Platform Estimate Cost API', function (): void {
 describe('Platform Pricing Request Builder', function (): void {
 
     it('throws exception when exceeding 50 endpoint limit with forEndpoints', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): Cjmellor\FalAi\Support\PricingRequest => $falAi->platform()->pricing()
+        expect(fn (): Cjmellor\FalAi\Support\PricingRequest => $driver->platform()->pricing()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
 
     it('throws exception when exceeding 50 endpoint limit with forEndpoint', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->pricing();
+        $builder = $driver->platform()->pricing();
 
         // Add 50 endpoints
         for ($i = 1; $i <= 50; $i++) {
@@ -203,9 +215,9 @@ describe('Platform Pricing Request Builder', function (): void {
     });
 
     it('can retrieve current endpoint ids', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->pricing()
+        $builder = $driver->platform()->pricing()
             ->forEndpoint('fal-ai/flux/dev')
             ->forEndpoint('fal-ai/flux/schnell');
 
@@ -220,9 +232,9 @@ describe('Platform Pricing Request Builder', function (): void {
 describe('Platform Estimate Cost Request Builder', function (): void {
 
     it('can retrieve current endpoints', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->estimateCost()
+        $builder = $driver->platform()->estimateCost()
             ->endpoint('fal-ai/flux/dev', callQuantity: 100)
             ->endpoint('fal-ai/flux/schnell', unitQuantity: 50);
 
@@ -233,9 +245,9 @@ describe('Platform Estimate Cost Request Builder', function (): void {
     });
 
     it('can switch between estimate types', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->estimateCost()
+        $builder = $driver->platform()->estimateCost()
             ->historicalApiPrice();
         expect($builder->estimateType)->toBe('historical_api_price');
 
@@ -255,9 +267,9 @@ describe('Platform Usage API', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/usage-single-endpoint'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->forEndpoint('fal-ai/flux/dev')
             ->get();
 
@@ -274,9 +286,9 @@ describe('Platform Usage API', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/usage-date-range'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->forEndpoint('fal-ai/flux/dev')
             ->between('2025-01-10T00:00:00Z', '2025-01-12T00:00:00Z')
             ->timeframe('day')
@@ -293,9 +305,9 @@ describe('Platform Usage API', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/usage-multiple-endpoints'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
             ->get();
 
@@ -310,9 +322,9 @@ describe('Platform Usage API', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/usage-single-endpoint'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->forEndpoint('fal-ai/flux/dev')
             ->get();
 
@@ -328,9 +340,9 @@ describe('Platform Usage API', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/usage-with-summary'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->forEndpoint('fal-ai/flux/dev')
             ->withSummary()
             ->get();
@@ -344,35 +356,35 @@ describe('Platform Usage API', function (): void {
 describe('Platform Usage Request Builder', function (): void {
 
     it('throws exception when exceeding 50 endpoint limit', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $driver->platform()->usage()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
 
     it('throws exception for invalid timeframe', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $driver->platform()->usage()
             ->timeframe('invalid')
         )->toThrow(InvalidArgumentException::class, 'Invalid timeframe');
     });
 
     it('throws exception for limit less than 1', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $falAi->platform()->usage()
+        expect(fn (): Cjmellor\FalAi\Support\UsageRequest => $driver->platform()->usage()
             ->limit(0)
         )->toThrow(InvalidArgumentException::class, 'Limit must be at least 1');
     });
 
     it('can chain expand options', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->usage()
+        $builder = $driver->platform()->usage()
             ->withTimeSeries()
             ->withSummary()
             ->withAuthMethod();
@@ -387,10 +399,10 @@ describe('Platform Usage Request Builder', function (): void {
             GetUsageRequest::class => MockResponse::fixture('Platform/analytics-empty'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
         // Just verify the builder works - the actual query params are tested in unit tests
-        $response = $falAi->platform()->usage()
+        $response = $driver->platform()->usage()
             ->from('2025-01-01T00:00:00Z')
             ->to('2025-01-15T00:00:00Z')
             ->get();
@@ -407,9 +419,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-basic'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->get();
 
@@ -424,9 +436,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-with-latency'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->withAllLatencyMetrics()
             ->get();
@@ -441,9 +453,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-multiple-buckets'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->withSuccessCount()
             ->withErrorCount()
@@ -459,9 +471,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-success-rate'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->withSuccessCount()
             ->get();
@@ -475,9 +487,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-empty'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->get();
 
@@ -489,9 +501,9 @@ describe('Platform Analytics API', function (): void {
             GetAnalyticsRequest::class => MockResponse::fixture('Platform/analytics-multiple-endpoints'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()->analytics()
+        $response = $driver->platform()->analytics()
             ->forEndpoints(['fal-ai/flux/dev', 'fal-ai/flux/schnell'])
             ->get();
 
@@ -508,34 +520,34 @@ describe('Platform Analytics API', function (): void {
 describe('Platform Analytics Request Builder', function (): void {
 
     it('throws exception when no endpoint provided', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Responses\AnalyticsResponse => $falAi->platform()->analytics()->get())
+        expect(fn (): Cjmellor\FalAi\Responses\AnalyticsResponse => $driver->platform()->analytics()->get())
             ->toThrow(InvalidArgumentException::class, 'At least one endpoint ID is required for analytics');
     });
 
     it('throws exception when exceeding 50 endpoint limit', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
         $endpoints = array_map(fn (int $i): string => "fal-ai/model-{$i}", range(1, 51));
 
-        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
+        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $driver->platform()->analytics()
             ->forEndpoints($endpoints)
         )->toThrow(InvalidArgumentException::class, 'Maximum of 50 endpoint IDs allowed');
     });
 
     it('throws exception for invalid timeframe', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $falAi->platform()->analytics()
+        expect(fn (): Cjmellor\FalAi\Support\AnalyticsRequest => $driver->platform()->analytics()
             ->timeframe('yearly')
         )->toThrow(InvalidArgumentException::class, 'Invalid timeframe');
     });
 
     it('can chain metric options', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->analytics()
+        $builder = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->withRequestCount()
             ->withSuccessCount()
@@ -552,9 +564,9 @@ describe('Platform Analytics Request Builder', function (): void {
     });
 
     it('can use withAllMetrics helper', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()->analytics()
+        $builder = $driver->platform()->analytics()
             ->forEndpoint('fal-ai/flux/dev')
             ->withAllMetrics();
 
@@ -578,9 +590,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -595,9 +607,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()
+        $builder = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->withIdempotencyKey('unique-key-123');
 
@@ -613,9 +625,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-success'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -627,9 +639,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -641,9 +653,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -659,9 +671,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-partial-failure'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -677,9 +689,9 @@ describe('Platform Delete Request Payloads API', function (): void {
             DeleteRequestPayloadsRequest::class => MockResponse::fixture('Platform/delete-payloads-empty'),
         ]);
 
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $response = $falAi->platform()
+        $response = $driver->platform()
             ->deleteRequestPayloads('req_123456789')
             ->delete();
 
@@ -691,9 +703,9 @@ describe('Platform Delete Request Payloads API', function (): void {
     });
 
     it('can retrieve request ID from builder', function (): void {
-        $falAi = new FalAi();
+        $driver = createFalDriverForPlatformTests();
 
-        $builder = $falAi->platform()
+        $builder = $driver->platform()
             ->deleteRequestPayloads('req_123456789');
 
         expect($builder->requestId)->toBe('req_123456789');

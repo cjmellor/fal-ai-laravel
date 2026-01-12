@@ -1,6 +1,4 @@
 .idea
-.trae/
-.vscode
 vendor
 /workbench/*
 !/workbench/routes

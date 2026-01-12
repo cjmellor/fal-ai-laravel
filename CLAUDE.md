@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A Laravel package for integrating with the Fal.ai API. Provides a fluent interface for AI model interactions with webhook support, streaming, queue/sync modes, and Platform APIs for pricing, usage analytics, and cost estimation.
+A Laravel package for integrating with AI APIs using a multi-provider architecture. Supports **Fal.ai** and **Replicate** with a unified driver-based interface. Provides a fluent API for model interactions with webhook support, streaming, queue/sync modes, and Platform APIs (Fal.ai only) for pricing, usage analytics, and cost estimation.
 
 ## Commands
 
@@ -12,8 +12,11 @@ A Laravel package for integrating with the Fal.ai API. Provides a fluent interfa
 # Run all tests
 composer test
 
+# Run tests with coverage report
+composer test:coverage
+
 # Run a single test file
-./vendor/bin/pest tests/Unit/FalAiTest.php
+./vendor/bin/pest tests/Unit/Drivers/FalDriverTest.php
 
 # Run a single test by name
 ./vendor/bin/pest --filter="test name here"
@@ -48,77 +51,93 @@ composer serve
 
 ## Architecture
 
-### Two API Systems
+### Multi-Driver Pattern
 
-The package provides two distinct API systems:
+The package uses Laravel's Manager pattern for multi-provider support:
 
-1. **Model APIs** - Execute AI models (image generation, etc.) via `FalAi::model()`
-2. **Platform APIs** - Query pricing, usage, analytics via `FalAi::platform()`
+```
+FalAi Facade → AIManager → Driver (Fal/Replicate)
+```
 
-Each has its own connector, endpoint, and fluent builder pattern.
+- **`AIManager`** (`src/Manager/AIManager.php`) - Extends Laravel's `Manager` class, provides `driver()` method for selecting providers
+- **`DriverInterface`** (`src/Contracts/DriverInterface.php`) - Core contract all drivers implement
+- **`SupportsPlatform`** (`src/Contracts/SupportsPlatform.php`) - Optional interface for Platform API support (Fal only)
+
+### Two API Systems (Fal.ai only)
+
+1. **Model APIs** - Execute AI models (image generation, etc.) via `FalAi::model()` or `FalAi::driver('fal')->model()`
+2. **Platform APIs** - Query pricing, usage, analytics via `FalAi::platform()` (Fal.ai driver only)
+
+### Source Structure
+
+```
+src/
+├── Manager/AIManager.php           # Laravel Manager - entry point via facade
+├── Platform.php                    # Platform API gateway (Fal.ai only)
+├── Connectors/
+│   ├── FalConnector.php            # Saloon connector with Key auth
+│   └── PlatformConnector.php       # Platform API connector
+├── Drivers/
+│   ├── Fal/FalDriver.php           # Fal driver (DriverInterface + SupportsPlatform)
+│   ├── Replicate/
+│   │   ├── ReplicateDriver.php     # Replicate driver (DriverInterface)
+│   │   ├── ReplicateConnector.php  # Saloon connector with Bearer auth
+│   │   ├── Enums/PredictionStatus.php
+│   │   ├── Requests/               # CreatePrediction, GetPrediction, CancelPrediction
+│   │   ├── Responses/PredictionResponse.php
+│   │   └── Webhooks/               # VerifyReplicateWebhook, ReplicateWebhookVerifier
+│   └── Concerns/ResolvesModelId.php
+├── Contracts/                      # DriverInterface, SupportsPlatform, DriverResponseInterface
+├── Enums/RequestMode.php           # Queue, Sync, Stream modes
+├── Requests/                       # Fal model API requests (SubmitRequest, etc.)
+│   └── Platform/                   # Fal Platform API requests
+├── Responses/                      # Fal response wrappers extending AbstractResponse
+├── Support/                        # FluentRequest + Platform API builders
+├── Middleware/VerifyFalWebhook.php
+├── Services/WebhookVerifier.php
+└── Exceptions/
+```
 
 ### Core Components
 
-- **`FalAi`** (`src/FalAi.php`) - Main entry point. Methods: `model()`, `platform()`, `run()`, `status()`, `result()`, `stream()`, `cancel()`.
+- **`AIManager`** - Laravel Manager implementation. Entry point via facade.
+  - `driver('fal')` / `driver('replicate')` - Select provider
+  - Default driver from `config('fal-ai.default')`
 
-- **`Platform`** (`src/Platform.php`) - Platform API gateway. Returns fluent builders: `->pricing()`, `->estimateCost()`, `->usage()`, `->analytics()`.
+- **`FalDriver`** - Fal.ai implementation. Methods: `model()`, `run()`, `status()`, `result()`, `stream()`, `cancel()`, `platform()`.
 
-- **`FluentRequest`** (`src/Support/FluentRequest.php`) - Chainable request builder for model requests. Dynamic `__call` converts camelCase to snake_case for API params (e.g., `->imageSize('landscape')` → `image_size: 'landscape'`). Supports immutable patterns via `Immutable` suffix.
+- **`ReplicateDriver`** - Replicate implementation. Methods: `model()`, `run()`, `status()`, `result()`, `cancel()`. No `platform()` (throws `PlatformNotSupportedException`).
 
-- **`FalConnector`** (`src/Connectors/FalConnector.php`) - Saloon HTTP connector for model APIs. Uses `Key` prefix authentication.
+- **`FluentRequest`** (`src/Support/FluentRequest.php`) - Driver-agnostic chainable request builder. Dynamic `__call` converts camelCase to snake_case for API params. Uses `RequestMode` enum for execution modes.
 
-- **`PlatformConnector`** (`src/Connectors/PlatformConnector.php`) - Saloon HTTP connector for Platform APIs.
-
-### Platform API Fluent Builders
-
-Located in `src/Support/`:
-- `PricingRequest` - Build pricing queries with `->forEndpoint()`, `->forEndpoints()`
-- `EstimateCostRequest` - Build cost estimates with `->historicalApiPrice()`, `->unitPrice()`, `->endpoint()`
-- `UsageRequest` - Build usage queries with `->between()`, `->timeframe()`, `->withSummary()`
-- `AnalyticsRequest` - Build analytics queries with `->withRequestCount()`, `->withAllMetrics()`
-
-### Request Classes
-
-All extend Saloon's `Request` class. Located in `src/Requests/`:
-
-**Model API requests:**
-- `SubmitRequest`, `FetchRequestStatusRequest`, `GetResultRequest`, `StreamRequest`, `CancelRequest`
-
-**Platform API requests** (`src/Requests/Platform/`):
-- `GetPricingRequest`, `EstimateCostRequest`, `GetUsageRequest`, `GetAnalyticsRequest`
-
-### Response Classes
-
-**Saloon Response wrappers** (`src/Responses/`) - Extend Saloon's `Response` with typed accessors:
-- `SubmitResponse`, `StatusResponse`, `ResultResponse`, `StreamResponse`
-- `PricingResponse`, `UsageResponse`, `AnalyticsResponse`, `EstimateCostResponse`
-
-**Data Transfer Objects** (`src/Data/`) - Plain PHP classes for structured data:
-- `SubmitResponse`, `StatusResponse` - Typed DTOs with `fromArray()` factory methods
+- **`Platform`** (`src/Platform.php`) - Platform API gateway. Returns fluent builders: `->pricing()`, `->estimateCost()`, `->usage()`, `->analytics()`, `->deleteRequestPayloads()`.
 
 ### Webhook System
 
-- **`VerifyFalWebhook`** middleware (`src/Middleware/VerifyFalWebhook.php`) - ED25519 signature verification using JWKS
-- **`WebhookVerifier`** service (`src/Services/WebhookVerifier.php`) - Verifies signatures and timestamps
-- Pre-configured route at `/webhooks/fal` (loaded via `routes/webhooks.php`)
+- **Fal.ai**: `VerifyFalWebhook` middleware with ED25519 signature verification using JWKS
+- **Replicate**: `VerifyReplicateWebhook` middleware with HMAC-SHA256 signature verification
+- Pre-configured routes at `/webhooks/fal` and `/webhooks/replicate` (loaded via `routes/webhooks.php`)
 
 ### API Endpoints
 
+**Fal.ai:**
 - Queue mode (default): `https://queue.fal.run`
 - Sync mode: `https://fal.run`
 - Streaming: `https://fal.run` with `/stream` suffix
 - Platform APIs: `https://api.fal.ai`
+
+**Replicate:**
+- All endpoints: `https://api.replicate.com`
+- Predictions: `/v1/predictions`
 
 ## Configuration
 
 Configuration file: `config/fal-ai.php`
 
 Key options:
-- `api_key` - Fal.ai API key (from `FAL_API_KEY` env var)
-- `base_url` - Queue API endpoint (default: `https://queue.fal.run`)
-- `platform_base_url` - Platform API endpoint (default: `https://api.fal.ai`)
-- `default_model` - Default model ID (optional)
-- `webhook` - JWKS cache TTL, timestamp tolerance, verification timeout
+- `default` - Default driver (`fal` or `replicate`)
+- `drivers.fal.api_key` - Fal.ai API key (from `FAL_API_KEY` env var)
+- `drivers.replicate.api_key` - Replicate API key (from `REPLICATE_API_KEY` env var)
 
 ## Namespace
 
@@ -131,17 +150,30 @@ All code uses `Cjmellor\FalAi` namespace. Auto-registered:
 Uses Pest with Orchestra Testbench. Tests extend `Cjmellor\FalAi\Tests\TestCase`.
 
 Test structure:
+- `tests/Unit/Drivers/` - Driver-specific unit tests
 - `tests/Unit/` - Unit tests for individual classes
-- `tests/Feature/` - Integration tests for workflows
+- `tests/Feature/` - Integration tests including MultiDriverTest
 - `tests/Integration/` - Full end-to-end integration tests
 - `tests/Arch.php` - Architecture tests using pest-plugin-arch
+- `tests/Fixtures/Saloon/` - Mock response fixtures (Fal/, Replicate/)
 
 ## Saloon HTTP Client
 
 The package uses Saloon 3.x for all HTTP communication. Key patterns:
 - Connectors extend `Connector` with `resolveBaseUrl()` and `defaultAuth()`
+- FalConnector uses `TokenAuthenticator` with `Key` prefix
+- ReplicateConnector uses `TokenAuthenticator` with `Bearer` prefix
 - Requests extend `Request` with `resolveEndpoint()` and `defaultMethod()`
 - Responses accessed via `$response->json()`, `$response->status()`, etc.
-- Exceptions: `FatalRequestException`, `RequestException` from Saloon
 
 Documentation: https://docs.saloon.dev
+
+## Adding a New Driver
+
+1. Create driver directory: `src/Drivers/{ProviderName}/`
+2. Create connector extending Saloon's `Connector`
+3. Create driver class implementing `DriverInterface`
+4. Add driver config to `config/fal-ai.php` under `drivers`
+5. Register driver factory in `AIManager::create{ProviderName}Driver()`
+6. Add architecture tests to `tests/Arch.php`
+7. Create test fixtures in `tests/Fixtures/Saloon/{ProviderName}/`

@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class UsageResponse
+class UsageResponse extends AbstractResponse
 {
     /**
      * Get the time series usage data
      *
-     * @return array<array{bucket: string, results: array<array{endpoint_id: string, unit: string, quantity: int, unit_price: float, cost: float, currency: string, auth_method?: string}>}>
+     * @var array<array{bucket: string, results: array<array{endpoint_id: string, unit: string, quantity: int, unit_price: float, cost: float, currency: string, auth_method?: string}>}>
      */
     public array $timeSeries {
         get => $this->data['time_series'] ?? [];
@@ -20,7 +18,7 @@ class UsageResponse
     /**
      * Get the summary data (if requested via expand)
      *
-     * @return array<string, mixed>|null
+     * @var array<string, mixed>|null
      */
     public ?array $summary {
         get => $this->data['summary'] ?? null;
@@ -38,15 +36,6 @@ class UsageResponse
      */
     public bool $hasMore {
         get => $this->data['has_more'] ?? false;
-    }
-
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
     }
 
     /**
@@ -135,45 +124,5 @@ class UsageResponse
         }
 
         return $total;
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
     }
 }

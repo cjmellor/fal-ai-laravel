@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi;
 
+use Cjmellor\FalAi\Manager\AIManager;
+use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 
 class FalAiServiceProvider extends ServiceProvider
@@ -15,9 +17,11 @@ class FalAiServiceProvider extends ServiceProvider
             'fal-ai'
         );
 
-        $this->app->singleton('fal-ai', function (): FalAi {
-            return new FalAi;
+        $this->app->singleton('fal-ai', function (Application $app): AIManager {
+            return new AIManager($app);
         });
+
+        $this->app->alias('fal-ai', AIManager::class);
     }
 
     public function boot(): void

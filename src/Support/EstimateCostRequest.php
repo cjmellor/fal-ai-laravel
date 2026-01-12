@@ -66,9 +66,11 @@ class EstimateCostRequest
      */
     public function endpoint(string $endpointId, ?int $callQuantity = null, ?int $unitQuantity = null): self
     {
-        if ($callQuantity === null && $unitQuantity === null) {
-            throw new InvalidArgumentException('Either callQuantity or unitQuantity must be provided');
-        }
+        throw_if(
+            $callQuantity === null && $unitQuantity === null,
+            InvalidArgumentException::class,
+            'Either callQuantity or unitQuantity must be provided'
+        );
 
         $quantity = [];
 
@@ -102,9 +104,11 @@ class EstimateCostRequest
      */
     public function estimate(): EstimateCostResponse
     {
-        if ($this->configuredEndpoints === []) {
-            throw new InvalidArgumentException('At least one endpoint must be provided');
-        }
+        throw_if(
+            $this->configuredEndpoints === [],
+            InvalidArgumentException::class,
+            'At least one endpoint must be provided'
+        );
 
         $request = new SaloonEstimateCostRequest($this->estimateType, $this->configuredEndpoints);
         $response = $this->platform->connector->send($request);
