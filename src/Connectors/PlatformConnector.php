@@ -14,13 +14,13 @@ class PlatformConnector extends Connector
 
     public function resolveBaseUrl(): string
     {
-        return config()->string(key: 'fal-ai.platform_base_url');
+        return config()->string(key: 'fal-ai.drivers.fal.platform_base_url', default: 'https://api.fal.ai');
     }
 
     protected function defaultAuth(): TokenAuthenticator
     {
         return new TokenAuthenticator(
-            token: config()->string(key: 'fal-ai.api_key'),
+            token: config()->string(key: 'fal-ai.drivers.fal.api_key'),
             prefix: 'Key',
         );
     }

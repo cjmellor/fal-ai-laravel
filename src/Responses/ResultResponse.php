@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class ResultResponse
+class ResultResponse extends AbstractResponse
 {
     /**
      * Get all images from the response
@@ -26,27 +24,6 @@ class ResultResponse
      * Get the first image URL
      */
     public ?string $firstImageUrl {
-        get => $this->images[0]['url'] ?? null;
-    }
-
-    /**
-     * Get the primary image (alias for firstImage)
-     */
-    public ?array $primaryImage {
-        get => $this->images[0] ?? null;
-    }
-
-    /**
-     * Get the main image URL (alias for firstImageUrl)
-     */
-    public ?string $mainImageUrl {
-        get => $this->images[0]['url'] ?? null;
-    }
-
-    /**
-     * Get image URL by index (defaults to first image)
-     */
-    public ?string $imageUrl {
         get => $this->images[0]['url'] ?? null;
     }
 
@@ -125,54 +102,5 @@ class ResultResponse
      */
     public ?int $fileSize {
         get => $this->images[0]['file_size'] ?? null;
-    }
-
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
     }
 }

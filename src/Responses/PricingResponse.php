@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Cjmellor\FalAi\Responses;
 
-use Saloon\Http\Response;
-
-class PricingResponse
+class PricingResponse extends AbstractResponse
 {
     /**
      * Get all prices
@@ -31,15 +29,6 @@ class PricingResponse
         get => $this->data['has_more'] ?? false;
     }
 
-    private array $data;
-
-    public function __construct(
-        private Response $response,
-        array $data
-    ) {
-        $this->data = $data;
-    }
-
     /**
      * Get pricing for a specific endpoint
      *
@@ -62,45 +51,5 @@ class PricingResponse
     public function getUnitPriceFor(string $endpointId): ?float
     {
         return $this->getPriceFor($endpointId)['unit_price'] ?? null;
-    }
-
-    /**
-     * Get the raw JSON response
-     */
-    public function json(): array
-    {
-        return $this->response->json();
-    }
-
-    /**
-     * Get the HTTP status code
-     */
-    public function status(): int
-    {
-        return $this->response->status();
-    }
-
-    /**
-     * Check if the request was successful
-     */
-    public function successful(): bool
-    {
-        return $this->response->successful();
-    }
-
-    /**
-     * Check if the request failed
-     */
-    public function failed(): bool
-    {
-        return $this->response->failed();
-    }
-
-    /**
-     * Get the underlying Saloon response
-     */
-    public function getResponse(): Response
-    {
-        return $this->response;
     }
 }
