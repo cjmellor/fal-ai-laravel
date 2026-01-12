@@ -9,7 +9,7 @@ class PricingResponse extends AbstractResponse
     /**
      * Get all prices
      *
-     * @return array<array{endpoint_id: string, unit_price: float, unit: string, currency: string}>
+     * @var array<array{endpoint_id: string, unit_price: float, unit: string, currency: string}>
      */
     public array $prices {
         get => $this->data['prices'] ?? [];

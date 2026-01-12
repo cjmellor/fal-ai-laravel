@@ -9,7 +9,7 @@ class DeleteRequestPayloadsResponse extends AbstractResponse
     /**
      * Get all CDN delete results
      *
-     * @return array<array{link: string, exception: string|null}>
+     * @var array<array{link: string, exception: string|null}>
      */
     public array $cdnDeleteResults {
         get => $this->data['cdn_delete_results'] ?? [];

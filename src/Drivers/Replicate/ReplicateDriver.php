@@ -26,8 +26,12 @@ class ReplicateDriver implements DriverInterface
 
     protected ReplicateConnector $connector;
 
+    /** @var array<string, mixed> */
     protected array $config;
 
+    /**
+     * @param  array<string, mixed>  $config
+     */
     public function __construct(array $config = [])
     {
         $this->config = $config;

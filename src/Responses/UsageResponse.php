@@ -9,7 +9,7 @@ class UsageResponse extends AbstractResponse
     /**
      * Get the time series usage data
      *
-     * @return array<array{bucket: string, results: array<array{endpoint_id: string, unit: string, quantity: int, unit_price: float, cost: float, currency: string, auth_method?: string}>}>
+     * @var array<array{bucket: string, results: array<array{endpoint_id: string, unit: string, quantity: int, unit_price: float, cost: float, currency: string, auth_method?: string}>}>
      */
     public array $timeSeries {
         get => $this->data['time_series'] ?? [];
@@ -18,7 +18,7 @@ class UsageResponse extends AbstractResponse
     /**
      * Get the summary data (if requested via expand)
      *
-     * @return array<string, mixed>|null
+     * @var array<string, mixed>|null
      */
     public ?array $summary {
         get => $this->data['summary'] ?? null;

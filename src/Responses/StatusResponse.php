@@ -29,6 +29,8 @@ class StatusResponse extends AbstractResponse
 
     /**
      * Get logs if available
+     *
+     * @var array<int, array<string, mixed>>|null
      */
     public ?array $logs {
         get => $this->data['logs'] ?? null;
@@ -36,6 +38,8 @@ class StatusResponse extends AbstractResponse
 
     /**
      * Get metrics if available
+     *
+     * @var array<string, mixed>|null
      */
     public ?array $metrics {
         get => $this->data['metrics'] ?? null;
@@ -43,6 +47,8 @@ class StatusResponse extends AbstractResponse
 
     /**
      * Get timings if available
+     *
+     * @var array<string, float>|null
      */
     public ?array $timings {
         get => $this->data['timings'] ?? null;

@@ -17,6 +17,22 @@ use Throwable;
  *
  * Provides a chainable interface for building model requests.
  * Works with any driver implementing DriverInterface.
+ *
+ * @method self prompt(string $value) Set the prompt
+ * @method self imageSize(string $value) Set the image size
+ * @method self numImages(int $value) Set the number of images
+ * @method self numOutputs(int $value) Set the number of outputs (Replicate)
+ * @method self numInferenceSteps(int $value) Set inference steps
+ * @method self seed(int $value) Set the seed
+ * @method self guidanceScale(float $value) Set guidance scale
+ * @method self negativePrompt(string $value) Set negative prompt
+ * @method self imageUrl(string $value) Set image URL
+ * @method self maskUrl(string $value) Set mask URL
+ * @method self strength(float $value) Set strength
+ * @method self enableSafetyChecker(bool $value) Enable/disable safety checker
+ * @method self outputFormat(string $value) Set output format
+ * @method self promptImmutable(string $value) Set the prompt (immutable)
+ * @method self imageSizeImmutable(string $value) Set the image size (immutable)
  */
 class FluentRequest
 {
@@ -24,6 +40,8 @@ class FluentRequest
 
     /**
      * The input data for the request
+     *
+     * @var array<string, mixed>
      */
     public private(set) array $data = [];
 
@@ -55,6 +73,8 @@ class FluentRequest
 
     /**
      * Handle dynamic method calls for fluent interface
+     *
+     * @param  array<int, mixed>  $arguments
      */
     public function __call(string $method, array $arguments): self
     {
@@ -78,7 +98,7 @@ class FluentRequest
      * Handle dynamic method calls for immutable fluent interface
      *
      * @param  string  $method  The method name (will be converted to snake_case)
-     * @param  array  $arguments  The method arguments (first argument becomes the value)
+     * @param  array<int, mixed>  $arguments  The method arguments (first argument becomes the value)
      * @return self New instance with the data set
      *
      * @example $newRequest = $request->promptImmutable('Hello world')
@@ -169,6 +189,8 @@ class FluentRequest
 
     /**
      * Get the input data
+     *
+     * @return array<string, mixed>
      */
     public function getInput(): array
     {
@@ -193,6 +215,8 @@ class FluentRequest
 
     /**
      * Get all data as an array
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {
@@ -211,6 +235,8 @@ class FluentRequest
 
     /**
      * Set multiple data values at once
+     *
+     * @param  array<string, mixed>  $data
      */
     public function with(array $data): self
     {
@@ -221,6 +247,8 @@ class FluentRequest
 
     /**
      * Set multiple data values at once (immutable - returns new instance)
+     *
+     * @param  array<string, mixed>  $data
      */
     public function withImmutable(array $data): self
     {

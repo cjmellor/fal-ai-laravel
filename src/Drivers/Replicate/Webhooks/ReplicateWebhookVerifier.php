@@ -57,6 +57,8 @@ class ReplicateWebhookVerifier
     /**
      * Extract required headers from the request.
      *
+     * @return array<string, string>
+     *
      * @throws WebhookVerificationException
      */
     public function extractHeaders(Request $request): array

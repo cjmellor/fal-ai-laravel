@@ -6,6 +6,9 @@ namespace Cjmellor\FalAi\Data;
 
 class StatusResponse
 {
+    /**
+     * @param  array<int, array<string, mixed>>|null  $logs
+     */
     public function __construct(
         public readonly string $status,
         public readonly ?int $queuePosition = null,
@@ -13,6 +16,9 @@ class StatusResponse
         public readonly ?array $logs = null,
     ) {}
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public static function fromArray(array $data): self
     {
         return new self(
@@ -23,6 +29,9 @@ class StatusResponse
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         $result = ['status' => $this->status];

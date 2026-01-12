@@ -8,6 +8,8 @@ class ResultResponse extends AbstractResponse
 {
     /**
      * Get all images from the response
+     *
+     * @var array<int, array<string, mixed>>
      */
     public array $images {
         get => $this->data['images'] ?? [];
@@ -15,6 +17,8 @@ class ResultResponse extends AbstractResponse
 
     /**
      * Get the first image array
+     *
+     * @var array<string, mixed>|null
      */
     public ?array $firstImage {
         get => $this->images[0] ?? null;
@@ -50,6 +54,8 @@ class ResultResponse extends AbstractResponse
 
     /**
      * Check if NSFW concepts were detected
+     *
+     * @var array<int, bool>|null
      */
     public ?array $hasNsfwConcepts {
         get => $this->data['has_nsfw_concepts'] ?? null;
@@ -57,6 +63,8 @@ class ResultResponse extends AbstractResponse
 
     /**
      * Get timing information
+     *
+     * @var array<string, float>|null
      */
     public ?array $timings {
         get => $this->data['timings'] ?? null;
@@ -64,6 +72,8 @@ class ResultResponse extends AbstractResponse
 
     /**
      * Get metrics information
+     *
+     * @var array<string, mixed>|null
      */
     public ?array $metrics {
         get => $this->data['metrics'] ?? null;

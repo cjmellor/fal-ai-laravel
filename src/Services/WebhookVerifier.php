@@ -65,6 +65,8 @@ class WebhookVerifier
     /**
      * Extract required headers from the request
      *
+     * @return array<string, string>
+     *
      * @throws WebhookVerificationException
      */
     private function extractHeaders(Request $request): array
@@ -107,6 +109,8 @@ class WebhookVerifier
 
     /**
      * Construct the message for signature verification
+     *
+     * @param  array<string, string>  $headers
      */
     private function constructMessage(array $headers, string $body): string
     {
@@ -122,6 +126,8 @@ class WebhookVerifier
 
     /**
      * Get public keys from JWKS endpoint with caching
+     *
+     * @return array<int, string>
      *
      * @throws WebhookVerificationException
      */
@@ -168,6 +174,8 @@ class WebhookVerifier
 
     /**
      * Verify the signature using ED25519
+     *
+     * @param  array<int, string>  $publicKeys
      *
      * @throws WebhookVerificationException
      */

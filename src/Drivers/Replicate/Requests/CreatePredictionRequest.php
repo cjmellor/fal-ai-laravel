@@ -25,14 +25,16 @@ class CreatePredictionRequest extends Request implements HasBody
 
     /**
      * @param  string|null  $version  The model version ID (64 char hex) or "owner/model:version" format
-     * @param  array  $input  The model input parameters
+     * @param  array<string, mixed>  $input  The model input parameters
      * @param  string|null  $webhookUrl  Optional webhook URL for async notifications
-     * @param  array  $webhookEventsFilter  Events to filter for webhook (start, output, logs, completed)
+     * @param  array<int, string>  $webhookEventsFilter  Events to filter for webhook (start, output, logs, completed)
      */
     public function __construct(
         protected readonly ?string $version = null,
+        /** @var array<string, mixed> */
         protected readonly array $input = [],
         protected readonly ?string $webhookUrl = null,
+        /** @var array<int, string> */
         protected readonly array $webhookEventsFilter = [],
     ) {}
 
@@ -42,6 +44,8 @@ class CreatePredictionRequest extends Request implements HasBody
     }
 
     /**
+     * @return array<string, mixed>
+     *
      * @throws Throwable
      */
     public function defaultBody(): array

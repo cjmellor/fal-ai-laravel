@@ -18,6 +18,9 @@ beforeEach(function (): void {
     ]);
 });
 
+/**
+ * @param  array<string, string>  $headers
+ */
 function createReplicateWebhookRequest(array $headers, string $body = '{"test":"data"}'): Request
 {
     $serverHeaders = [];

@@ -12,6 +12,9 @@ beforeEach(function (): void {
     $this->verifier = new WebhookVerifier();
 });
 
+/**
+ * @param  array<string, string>  $headers
+ */
 function createFalWebhookRequest(array $headers, string $body = '{"test":"data"}'): Request
 {
     $serverHeaders = [];
@@ -23,6 +26,9 @@ function createFalWebhookRequest(array $headers, string $body = '{"test":"data"}
     return Request::create('/webhook', 'POST', [], [], [], $serverHeaders, $body);
 }
 
+/**
+ * @param  array<int, array<string, mixed>>  $keys
+ */
 function mockJwksResponse(array $keys): void
 {
     Http::fake([

@@ -46,6 +46,8 @@ class PredictionResponse extends AbstractResponse
 
     /**
      * Get the input parameters
+     *
+     * @var array<string, mixed>
      */
     public array $input {
         get => $this->data['input'] ?? [];
@@ -74,6 +76,8 @@ class PredictionResponse extends AbstractResponse
 
     /**
      * Get the prediction URLs
+     *
+     * @var array<string, string>
      */
     public array $urls {
         get => $this->data['urls'] ?? [];
@@ -102,6 +106,8 @@ class PredictionResponse extends AbstractResponse
 
     /**
      * Get the metrics data
+     *
+     * @var array<string, mixed>
      */
     public array $metricsData {
         get => $this->data['metrics'] ?? [];

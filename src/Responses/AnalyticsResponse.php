@@ -9,7 +9,7 @@ class AnalyticsResponse extends AbstractResponse
     /**
      * Get the time series analytics data
      *
-     * @return array<array{bucket: string, results: array<array{endpoint_id: string, request_count?: int, success_count?: int, user_error_count?: int, error_count?: int, p50_prepare_duration?: float, p75_prepare_duration?: float, p90_prepare_duration?: float, p50_duration?: float, p75_duration?: float, p90_duration?: float}>}>
+     * @var array<array{bucket: string, results: array<array{endpoint_id: string, request_count?: int, success_count?: int, user_error_count?: int, error_count?: int, p50_prepare_duration?: float, p75_prepare_duration?: float, p90_prepare_duration?: float, p50_duration?: float, p75_duration?: float, p90_duration?: float}>}>
      */
     public array $timeSeries {
         get => $this->data['time_series'] ?? [];

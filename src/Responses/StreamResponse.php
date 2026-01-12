@@ -26,7 +26,7 @@ readonly class StreamResponse
      * Execute the streaming request and return the final result
      * This method provides consistency with the non-streaming API's run() method
      *
-     * @return array|null The final result data or null if no data received
+     * @return array<string, mixed>|null The final result data or null if no data received
      *
      * @throws SSEProtocolException
      */
@@ -39,7 +39,7 @@ readonly class StreamResponse
      * Get the final result from the stream (blocks until stream is complete)
      * Returns the last event data, which typically contains the final result
      *
-     * @return array|null The final result data or null if no data received
+     * @return array<string, mixed>|null The final result data or null if no data received
      *
      * @throws SSEProtocolException
      */
@@ -57,7 +57,7 @@ readonly class StreamResponse
     /**
      * Stream the events as they come in
      *
-     * @return Generator<array> Generator yielding decoded JSON data from each SSE event
+     * @return Generator<int, array<string, mixed>> Generator yielding decoded JSON data from each SSE event
      *
      * @throws SSEProtocolException
      */
@@ -77,7 +77,7 @@ readonly class StreamResponse
     /**
      * Collect all streamed data into an array (blocks until stream is complete)
      *
-     * @return array Array of all event data received
+     * @return array<int, array<string, mixed>> Array of all event data received
      *
      * @throws SSEProtocolException
      */

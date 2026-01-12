@@ -20,8 +20,12 @@ class StreamRequest extends Request implements HasBody
 
     protected Method $method = Method::POST;
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         protected readonly ?string $modelId = null,
+        /** @var array<string, mixed> */
         protected readonly array $data = [],
     ) {}
 
@@ -41,6 +45,9 @@ class StreamRequest extends Request implements HasBody
         return "$modelId/stream";
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function defaultBody(): array
     {
         return $this->data;

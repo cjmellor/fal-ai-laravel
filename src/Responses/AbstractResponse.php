@@ -12,13 +12,19 @@ use Saloon\Http\Response;
  */
 abstract class AbstractResponse implements DriverResponseInterface
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         protected Response $response,
+        /** @var array<string, mixed> */
         protected array $data,
     ) {}
 
     /**
      * Get the raw JSON response
+     *
+     * @return array<string, mixed>
      */
     public function json(): array
     {
