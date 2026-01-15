@@ -5,12 +5,17 @@ namespace Cjmellor\FalAi\Tests;
 use Cjmellor\FalAi\FalAiServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
+use Saloon\Config;
 
 class TestCase extends Orchestra
 {
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Prevent any unmocked HTTP requests from going through to real APIs
+        // This will throw an exception if any test tries to make a real API call
+        Config::preventStrayRequests();
 
         Factory::guessFactoryNamesUsing(
             fn (string $modelName): string => 'Cjmellor\\FalAi\\Database\\Factories\\'.class_basename($modelName).'Factory'
