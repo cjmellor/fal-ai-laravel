@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.0.1 - 2026-01-15
+
+### What's Changed
+
+- Add `Config::preventStrayRequests()` to TestCase to prevent any unmocked HTTP requests from going through to real APIs during testing
+
+**Full Changelog**: https://github.com/cjmellor/fal-ai-laravel/compare/v2.0.0...v2.0.1
+
 ## v2.0.0 - 2026-01-11
 
 ### Added
