@@ -76,3 +76,18 @@ arch('Replicate driver does not depend on Fal driver')
 arch('Fal driver does not depend on Replicate driver')
     ->expect('Cjmellor\FalAi\Drivers\Fal')
     ->not->toUse('Cjmellor\FalAi\Drivers\Replicate');
+
+// Ensure Replicate deployment requests extend Saloon Request
+arch('Replicate deployment requests extend Saloon Request')
+    ->expect('Cjmellor\FalAi\Drivers\Replicate\Requests\Deployments')
+    ->toExtend(Request::class);
+
+// Ensure Replicate deployment responses extend AbstractResponse
+arch('Replicate DeploymentResponse extends AbstractResponse')
+    ->expect('Cjmellor\FalAi\Drivers\Replicate\Responses\DeploymentResponse')
+    ->toExtend(Cjmellor\FalAi\Responses\AbstractResponse::class);
+
+// Ensure support classes are final
+arch('Replicate support classes are final')
+    ->expect('Cjmellor\FalAi\Drivers\Replicate\Support')
+    ->toBeFinal();

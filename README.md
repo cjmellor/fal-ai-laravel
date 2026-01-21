@@ -21,6 +21,7 @@ A Laravel package for integrating with the [Fal.ai](https://fal.ai) API, providi
 - Webhook support with ED25519 signature verification
 - Platform APIs for pricing, usage, analytics, and cost estimation
 - Multi-provider architecture
+- Replicate Deployments API for auto-scaling inference
 
 > [!WARNING]
 > **Upgrading from v1.x?** Version 2.0 is a complete architectural rewrite with breaking changes. The configuration structure, API methods, and class namespaces have all changed. You **must** follow the [Upgrade Guide](UPGRADE.md) to migrate from v1.x to v2.x.
@@ -498,6 +499,7 @@ if ($status->isSucceeded()) {
 | Queue/Sync modes | Yes | No (always async) |
 | Streaming | Yes | No (use polling) |
 | Platform APIs | Yes | No |
+| Deployments API | No | Yes |
 | Webhooks | Yes | Yes |
 
 ### Replicate Webhooks
@@ -516,6 +518,74 @@ Configure webhook verification in `.env`:
 
 ```env
 REPLICATE_WEBHOOK_SECRET=your_webhook_secret
+```
+
+### Deployments
+
+Manage Replicate deployments for auto-scaling model inference.
+
+#### Create a Deployment
+
+```php
+$deployment = Ai::driver('replicate')
+    ->deployments()
+    ->create('my-image-generator')
+    ->model('stability-ai/sdxl')
+    ->version('da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf')
+    ->hardware('gpu-t4')
+    ->instances(1, 5)  // min, max
+    ->save();
+
+echo $deployment->name;       // 'my-image-generator'
+echo $deployment->hardware(); // 'gpu-t4'
+```
+
+**Available Hardware:** `cpu`, `gpu-t4`, `gpu-l40s`, `gpu-l40s-2x`, `gpu-a100-large`, `gpu-a100-large-2x`, `gpu-h100`
+
+#### List Deployments
+
+```php
+$collection = Ai::driver('replicate')->deployments()->list();
+
+foreach ($collection->results() as $deployment) {
+    echo $deployment->name . ': ' . $deployment->hardware();
+}
+
+// Pagination
+if ($collection->hasMore()) {
+    $nextUrl = $collection->next();
+}
+```
+
+#### Get, Update, Delete
+
+```php
+// Get
+$deployment = Ai::driver('replicate')->deployments()->get('owner', 'name');
+
+// Update
+$updated = Ai::driver('replicate')
+    ->deployments()
+    ->update('owner', 'name')
+    ->hardware('gpu-a100-large')
+    ->instances(2, 10)
+    ->save();
+
+// Delete
+Ai::driver('replicate')->deployments()->delete('owner', 'name');
+```
+
+#### Run Predictions via Deployment
+
+```php
+$prediction = Ai::driver('replicate')
+    ->deployment('owner/my-deployment')
+    ->with(['prompt' => 'A sunset over mountains'])
+    ->webhook('https://example.com/webhook')
+    ->run();
+
+// Use prediction ID with standard status/result methods
+$status = Ai::driver('replicate')->status($prediction->id);
 ```
 
 ---
