@@ -82,9 +82,11 @@ src/
 │   ├── Replicate/
 │   │   ├── ReplicateDriver.php     # Replicate driver (DriverInterface)
 │   │   ├── ReplicateConnector.php  # Saloon connector with Bearer auth
-│   │   ├── Enums/PredictionStatus.php
+│   │   ├── Enums/                  # PredictionStatus, Hardware
 │   │   ├── Requests/               # CreatePrediction, GetPrediction, CancelPrediction
-│   │   ├── Responses/PredictionResponse.php
+│   │   │   └── Deployments/        # CRUD requests for deployments
+│   │   ├── Responses/              # PredictionResponse, DeploymentResponse, DeploymentsCollection
+│   │   ├── Support/                # DeploymentsManager, DeploymentBuilder, DeploymentPredictionRequest
 │   │   └── Webhooks/               # VerifyReplicateWebhook, ReplicateWebhookVerifier
 │   └── Concerns/ResolvesModelId.php
 ├── Contracts/                      # DriverInterface, SupportsPlatform, DriverResponseInterface
@@ -106,11 +108,20 @@ src/
 
 - **`FalDriver`** - Fal.ai implementation. Methods: `model()`, `run()`, `status()`, `result()`, `stream()`, `cancel()`, `platform()`.
 
-- **`ReplicateDriver`** - Replicate implementation. Methods: `model()`, `run()`, `status()`, `result()`, `cancel()`. No `platform()` (throws `PlatformNotSupportedException`).
+- **`ReplicateDriver`** - Replicate implementation. Methods: `model()`, `run()`, `status()`, `result()`, `cancel()`, `deployments()`, `deployment()`. No `platform()` (throws `PlatformNotSupportedException`).
 
 - **`FluentRequest`** (`src/Support/FluentRequest.php`) - Driver-agnostic chainable request builder. Dynamic `__call` converts camelCase to snake_case for API params. Uses `RequestMode` enum for execution modes.
 
 - **`Platform`** (`src/Platform.php`) - Platform API gateway. Returns fluent builders: `->pricing()`, `->estimateCost()`, `->usage()`, `->analytics()`, `->deleteRequestPayloads()`.
+
+### Replicate Deployments API (Replicate only)
+
+Access via `FalAi::driver('replicate')->deployments()` or `->deployment('owner/name')`:
+
+- **`DeploymentsManager`** - CRUD operations: `list()`, `get()`, `create()`, `update()`, `delete()`
+- **`DeploymentBuilder`** - Fluent builder for create/update: `->model()->version()->hardware()->instances()->save()`
+- **`DeploymentPredictionRequest`** - Run predictions via deployment: `->with(['prompt' => '...'])->run()`
+- **`Hardware`** enum - Available SKUs: `cpu`, `gpu-t4`, `gpu-a100-large`, etc.
 
 ### Webhook System
 
@@ -129,6 +140,7 @@ src/
 **Replicate:**
 - All endpoints: `https://api.replicate.com`
 - Predictions: `/v1/predictions`
+- Deployments: `/v1/deployments`
 
 ## Configuration
 
@@ -177,3 +189,46 @@ Documentation: https://docs.saloon.dev
 5. Register driver factory in `AIManager::create{ProviderName}Driver()`
 6. Add architecture tests to `tests/Arch.php`
 7. Create test fixtures in `tests/Fixtures/Saloon/{ProviderName}/`
+
+## Coding Conventions
+
+- Use Laravel's `throw_if`/`throw_unless` helpers instead of manual if-throw blocks:
+
+```php
+// Prefer:
+throw_if($condition, SomeException::class, 'message');
+throw_unless($condition, SomeException::class, 'message');
+
+// Instead of:
+if ($condition) {
+    throw new SomeException('message');
+}
+```
+
+- Use Pest Higher Order Expectations for cleaner test assertions:
+
+```php
+// Prefer:
+expect($response)->id->toBe('abc123');
+expect($collection)->count()->toBe(2);
+expect($response)->successful()->toBeTrue();
+
+// Instead of:
+expect($response->id)->toBe('abc123');
+expect($collection->count())->toBe(2);
+expect($response->successful())->toBeTrue();
+```
+
+- Use Pest's `sequence()` for asserting on array/collection items instead of index access:
+
+```php
+// Prefer:
+expect($collection->results())->sequence(
+    fn ($item) => $item->name->toBe('deployment-one'),
+    fn ($item) => $item->name->toBe('deployment-two'),
+);
+
+// Instead of:
+expect($collection->results()[0])->name->toBe('deployment-one');
+expect($collection->results()[1])->name->toBe('deployment-two');
+```
