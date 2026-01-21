@@ -10,9 +10,12 @@ use Cjmellor\FalAi\Drivers\Replicate\Requests\CancelPredictionRequest;
 use Cjmellor\FalAi\Drivers\Replicate\Requests\CreatePredictionRequest;
 use Cjmellor\FalAi\Drivers\Replicate\Requests\GetPredictionRequest;
 use Cjmellor\FalAi\Drivers\Replicate\Responses\PredictionResponse;
+use Cjmellor\FalAi\Drivers\Replicate\Support\DeploymentPredictionRequest;
+use Cjmellor\FalAi\Drivers\Replicate\Support\DeploymentsManager;
 use Cjmellor\FalAi\Exceptions\PlatformNotSupportedException;
 use Cjmellor\FalAi\Exceptions\RequestFailedException;
 use Cjmellor\FalAi\Support\FluentRequest;
+use InvalidArgumentException;
 
 /**
  * Driver for the Replicate API.
@@ -122,6 +125,36 @@ class ReplicateDriver implements DriverInterface
         throw new RequestFailedException(
             'Streaming is not yet supported for the Replicate driver. Use run() and poll status() instead.'
         );
+    }
+
+    /**
+     * Access deployments management.
+     *
+     * Provides CRUD operations for Replicate deployments.
+     */
+    public function deployments(): DeploymentsManager
+    {
+        return new DeploymentsManager($this->connector);
+    }
+
+    /**
+     * Create a fluent request builder for running predictions via a deployment.
+     *
+     * @param  string  $deployment  The deployment identifier in "owner/name" format
+     *
+     * @throws InvalidArgumentException When deployment format is invalid
+     */
+    public function deployment(string $deployment): DeploymentPredictionRequest
+    {
+        throw_unless(
+            str_contains($deployment, '/'),
+            InvalidArgumentException::class,
+            "Deployment must be in 'owner/name' format. Got: {$deployment}"
+        );
+
+        [$owner, $name] = explode('/', $deployment, 2);
+
+        return new DeploymentPredictionRequest($this->connector, $owner, $name);
     }
 
     /**
