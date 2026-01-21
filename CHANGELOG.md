@@ -1,5 +1,72 @@
 # Changelog
 
+## v2.1.0 - 2026-01-21
+
+### What's New in v2.1.0
+
+Version 2.1.0 adds full support for the **Replicate Deployments API**, enabling auto-scaling model inference with custom deployments.
+
+#### Replicate Deployments API
+
+Manage Replicate deployments for production-ready, auto-scaling inference:
+
+```php
+// Create a deployment
+$deployment = Ai::driver('replicate')
+    ->deployments()
+    ->create('my-image-generator')
+    ->model('stability-ai/sdxl')
+    ->version('da77bc59ee60423279fd632efb4795ab731d9e3ca9705ef3341091fb989b7eaf')
+    ->hardware('gpu-t4')
+    ->instances(1, 5)  // min, max
+    ->save();
+
+// Run predictions via deployment
+$prediction = Ai::driver('replicate')
+    ->deployment('owner/my-deployment')
+    ->with(['prompt' => 'A sunset over mountains'])
+    ->webhook('https://example.com/webhook')
+    ->run();
+
+```
+#### New Features
+
+- **DeploymentsManager** - Full CRUD operations: `list()`, `get()`, `create()`, `update()`, `delete()`
+- **DeploymentBuilder** - Fluent builder for deployments: `->model()->version()->hardware()->instances()->save()`
+- **DeploymentPredictionRequest** - Run predictions through deployments with webhook support
+- **DeploymentResponse & DeploymentsCollection** - Response wrappers with pagination support
+- **Hardware Enum** - Type-safe hardware selection: `cpu`, `gpu-t4`, `gpu-l40s`, `gpu-a100-large`, `gpu-h100`, etc.
+
+#### Usage Examples
+
+```php
+// List deployments with pagination
+$collection = Ai::driver('replicate')->deployments()->list();
+foreach ($collection->results() as $deployment) {
+    echo $deployment->name . ': ' . $deployment->hardware();
+}
+
+// Update a deployment
+$updated = Ai::driver('replicate')
+    ->deployments()
+    ->update('owner', 'name')
+    ->hardware('gpu-a100-large')
+    ->instances(2, 10)
+    ->save();
+
+// Delete a deployment
+Ai::driver('replicate')->deployments()->delete('owner', 'name');
+
+```
+
+---
+
+### What's Changed
+
+* Add Replicate Deployments API support by @cjmellor in https://github.com/cjmellor/fal-ai-laravel/pull/16
+
+**Full Changelog**: https://github.com/cjmellor/fal-ai-laravel/compare/v2.0.1...v2.1.0
+
 ## v2.0.1 - 2026-01-15
 
 ### What's Changed
