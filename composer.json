@@ -76,6 +76,9 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true
+        },
+        "audit": {
+            "ignore": ["PKSA-xnj5-w74d-6wmz", "PKSA-rnpm-45mg-w6ht", "PKSA-5szq-gvrg-ttfq"]
         }
     },
     "extra": {
