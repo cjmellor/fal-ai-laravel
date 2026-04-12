@@ -18,7 +18,7 @@
     "require": {
         "php": "^8.4",
         "hosmelq/sse-saloon": "^0.1.0",
-        "illuminate/support": "^12.0",
+        "illuminate/support": "^12.0|^13.0",
         "saloonphp/saloon": "^3.0"
     },
     "require-dev": {
@@ -27,7 +27,7 @@
         "laravel/pail": "^1.2",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^8.0",
-        "orchestra/testbench": "^10.0",
+        "orchestra/testbench": "^10.0|^11.0",
         "pestphp/pest": "^3.0",
         "pestphp/pest-plugin-arch": "^3.0",
         "pestphp/pest-plugin-laravel": "^3.0",
