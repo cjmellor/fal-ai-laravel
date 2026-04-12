@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.2.0 - 2026-04-12
+
+### What's New in v2.2.0
+
+Added support for **Laravel 13** and **PHP 8.5**. The package now supports Laravel 12 and 13, and PHP 8.4 and 8.5.
+
+#### Changes
+
+- Updated `illuminate/support` constraint to `^12.0|^13.0`
+- Updated `orchestra/testbench` dev dependency to `^10.0|^11.0`
+- CI matrix extended to test against Laravel 12 & 13 and PHP 8.4 & 8.5
+
 ## v2.1.0 - 2026-01-21
 
 ### What's New in v2.1.0

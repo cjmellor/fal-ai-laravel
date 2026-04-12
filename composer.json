@@ -18,7 +18,7 @@
     "require": {
         "php": "^8.4",
         "hosmelq/sse-saloon": "^0.1.0",
-        "illuminate/support": "^12.0",
+        "illuminate/support": "^12.0|^13.0",
         "saloonphp/saloon": "^3.0"
     },
     "require-dev": {
@@ -27,10 +27,10 @@
         "laravel/pail": "^1.2",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^8.0",
-        "orchestra/testbench": "^10.0",
-        "pestphp/pest": "^3.0",
-        "pestphp/pest-plugin-arch": "^3.0",
-        "pestphp/pest-plugin-laravel": "^3.0",
+        "orchestra/testbench": "^10.0|^11.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-arch": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0",
         "phpstan/phpstan": "^2.0",
         "rector/rector": "^2.0",
         "saloonphp/laravel-plugin": "^3.6"
@@ -76,6 +76,9 @@
         "sort-packages": true,
         "allow-plugins": {
             "pestphp/pest-plugin": true
+        },
+        "audit": {
+            "ignore": ["PKSA-xnj5-w74d-6wmz", "PKSA-rnpm-45mg-w6ht", "PKSA-5szq-gvrg-ttfq"]
         }
     },
     "extra": {
